@@ -121,7 +121,7 @@ class scenaVideo2 extends Phaser.Scene {
       if (sliderContainer && sliderContainer.parentNode) {
         sliderContainer.parentNode.removeChild(sliderContainer);
       }
-      this.scene.start("DronesScene");
+      this.scene.start("DroneRepairScene");
     });
   }
 }

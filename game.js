@@ -24,8 +24,19 @@ var config = {
     roundPixels: true,
     willReadFrequently: true,
   },
-  scene: DroneRepairScene,
-  //[scenaPrincipal, scenaVideo, scenaFallos, scenaVideo2, DronesScene, scenaVideo3, ArduinoGameScene, Rompecabezas, scenaVideo4, Ultima
+  scene: [
+    scenaPrincipal,
+    scenaVideo,
+    scenaFallos,
+    scenaVideo2,
+    DroneRepairScene,
+    scenaVideo3,
+    ArduinoGameScene,
+    Rompecabezas,
+    scenaVideo4,
+    Ultima,
+  ],
+  //[
 };
 
 // Crear el contenedor del juego

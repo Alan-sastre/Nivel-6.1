@@ -39,48 +39,23 @@ class DroneRepairScene extends Phaser.Scene {
           "  delay(1000);",
           "}",
         ],
-        missingLine: 10,
+        missingLine: 9,
         correctValue: "2000",
         hint: "El motor debe estar encendido por 2 segundos (2000 milisegundos)",
         droneState: "slow",
         successMessage:
           "¡Correcto! El motor ahora gira a la velocidad correcta.",
       },
-      {
-        title: "Ejercicio 3: Sensor de luz",
-        code: [
-          "// Sensor de luz (LDR)",
-          "int sensorPin = A0;",
-          "int ledPin = 13;",
-          "",
-          "void setup() {",
-          "  pinMode(ledPin, OUTPUT);",
-          "}",
-          "",
-          "void loop() {",
-          "  int lectura = analogRead(sensorPin);",
-          "  if (lectura > 500) {",
-          "    _________(ledPin, HIGH);",
-          "  } else {",
-          "    digitalWrite(ledPin, LOW);",
-          "  }",
-          "  delay(100);",
-          "}",
-        ],
-        missingLine: 11,
-        correctValue: "digitalWrite",
-        hint: "Usa la función para escribir en un pin digital",
-        droneState: "working",
-        successMessage: "¡Excelente! El LED se enciende con luz ambiental.",
-      },
     ];
   }
 
   preload() {
-    this.load.image("background", "assets/drones/1.jpg");
+    this.load.image("Taller", "assets/drones/1.jpg");
     this.load.image("drone_off", "assets/drones/1.png");
     this.load.image("drone_slow", "assets/drones/1.png");
     this.load.image("drone_working", "assets/drones/1.png");
+    this.load.image("drone_red", "assets/drones/1.png");
+    this.load.image("drone_green", "assets/drones/1.png");
   }
 
   create() {
@@ -89,12 +64,15 @@ class DroneRepairScene extends Phaser.Scene {
     this.gameHeight = this.cameras.main.height;
     this.cameras.main.setRoundPixels(true);
 
+    // Detectar si es móvil
+    this.isMobile = this.gameWidth < 768;
+
     // Habilitar input para toda la escena
     this.input.setDefaultCursor("pointer");
 
     // Fondo con overlay muy sutil
     this.add
-      .image(0, 0, "background")
+      .image(0, 0, "Taller")
       .setOrigin(0, 0)
       .setDisplaySize(this.gameWidth, this.gameHeight);
 
@@ -104,11 +82,17 @@ class DroneRepairScene extends Phaser.Scene {
       .fillStyle(0x000000, 0.15)
       .fillRect(0, 0, this.gameWidth, this.gameHeight);
 
-    // Dron más grande
+    // Dron más grande - empieza rojo (ajustado para móviles)
+    const droneX = this.isMobile ? 80 : 120;
+    const droneScale = this.isMobile ? 0.35 : 0.45;
+
     this.drone = this.add
-      .image(120, this.gameHeight / 2, "drone_off")
-      .setScale(0.45)
+      .image(droneX, this.gameHeight / 2, "drone_red")
+      .setScale(droneScale)
       .setDepth(10);
+
+    // Aplicar tinte rojo al dron
+    this.drone.setTint(0xff0000);
 
     // Efecto sutil en el dron
     this.tweens.add({
@@ -147,7 +131,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Progreso discreto - más pequeño
     this.progressText = this.add
-      .text(this.gameWidth - 50, 20, "1/3", {
+      .text(this.gameWidth - 50, 20, "1/2", {
         fontFamily: "Arial",
         fontSize: "18px",
         color: "#ffffff",
@@ -159,11 +143,18 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   createCodeEditor() {
-    // Editor compacto estilo VS Code, más arriba
-    this.editorX = this.gameWidth * 0.45;
-    this.editorY = 70; // Subido de 100 a 70
-    this.editorWidth = this.gameWidth * 0.5;
-    this.editorHeight = this.gameHeight * 0.6; // Reducido de 0.7 a 0.6
+    // Editor compacto estilo VS Code, ajustado para móviles
+    if (this.isMobile) {
+      this.editorX = this.gameWidth * 0.45; // Más a la izquierda en móviles
+      this.editorY = 60;
+      this.editorWidth = this.gameWidth * 0.5; // Más ancho en móviles
+      this.editorHeight = this.gameHeight * 0.65; // Más alto en móviles
+    } else {
+      this.editorX = this.gameWidth * 0.55; // Más a la derecha
+      this.editorY = 70;
+      this.editorWidth = this.gameWidth * 0.4;
+      this.editorHeight = this.gameHeight * 0.6; // Más largo hacia abajo
+    }
 
     // Fondo del editor estilo VS Code
     this.editorBg = this.add
@@ -199,9 +190,9 @@ class DroneRepairScene extends Phaser.Scene {
 
   createMinimalButtons() {
     // Crear botones usando elementos de Phaser para posicionamiento correcto
-    const buttonWidth = 160;
-    const buttonHeight = 45;
-    const buttonSpacing = 20;
+    const buttonWidth = this.isMobile ? 140 : 160;
+    const buttonHeight = this.isMobile ? 50 : 45;
+    const buttonSpacing = this.isMobile ? 15 : 20;
 
     // Posición de los botones - centrados debajo del editor
     const buttonY = this.editorY + this.editorHeight + 20;
@@ -246,7 +237,7 @@ class DroneRepairScene extends Phaser.Scene {
         "💡 Pista",
         {
           fontFamily: "Arial",
-          fontSize: "16px",
+          fontSize: this.isMobile ? "18px" : "16px",
           color: "#ffffff",
           stroke: "#000000",
           strokeThickness: 2,
@@ -315,7 +306,7 @@ class DroneRepairScene extends Phaser.Scene {
         "✅ Comprobar",
         {
           fontFamily: "Arial",
-          fontSize: "16px",
+          fontSize: this.isMobile ? "18px" : "16px",
           color: "#ffffff",
           stroke: "#000000",
           strokeThickness: 2,
@@ -380,7 +371,7 @@ class DroneRepairScene extends Phaser.Scene {
     this.currentExerciseIndex = index;
 
     // Actualizar progreso
-    this.progressText.setText(`${index + 1}/3`);
+    this.progressText.setText(`${index + 1}/2`);
 
     // Limpiar contenedores anteriores
     this.codeContainer.removeAll(true);
@@ -409,7 +400,7 @@ class DroneRepairScene extends Phaser.Scene {
     this.exerciseTitle = this.add
       .text(this.gameWidth / 2, 55, this.currentExercise.title, {
         fontFamily: "Arial",
-        fontSize: "20px",
+        fontSize: this.isMobile ? "18px" : "20px",
         color: "#ffffff",
         stroke: "#000000",
         strokeThickness: 2,
@@ -418,7 +409,7 @@ class DroneRepairScene extends Phaser.Scene {
       .setDepth(5);
 
     // Mostrar código con números de línea estilo VS Code
-    const lineHeight = 22;
+    const lineHeight = this.isMobile ? 20 : 22;
 
     this.currentExercise.code.forEach((line, i) => {
       const y = i * lineHeight;
@@ -427,10 +418,10 @@ class DroneRepairScene extends Phaser.Scene {
       const lineNum = this.add
         .text(0, y + 2, (i + 1).toString().padStart(2, " "), {
           fontFamily: "Consolas, monospace",
-          fontSize: "14px",
+          fontSize: this.isMobile ? "12px" : "14px",
           color: "#858585",
           align: "right",
-          fixedWidth: 35,
+          fixedWidth: this.isMobile ? 30 : 35,
         })
         .setOrigin(1, 0)
         .setDepth(2);
@@ -445,7 +436,7 @@ class DroneRepairScene extends Phaser.Scene {
           const beforeText = this.add
             .text(0, y + 2, parts[0], {
               fontFamily: "Consolas, monospace",
-              fontSize: "14px",
+              fontSize: this.isMobile ? "12px" : "14px",
               color: "#d4d4d4",
             })
             .setOrigin(0, 0)
@@ -480,7 +471,7 @@ class DroneRepairScene extends Phaser.Scene {
               "",
               {
                 fontFamily: "Consolas, monospace",
-                fontSize: "14px",
+                fontSize: this.isMobile ? "12px" : "14px",
                 color: "#ffffff",
               }
             )
@@ -512,7 +503,7 @@ class DroneRepairScene extends Phaser.Scene {
           const afterText = this.add
             .text(inputX + 88, y + 2, parts[1], {
               fontFamily: "Consolas, monospace",
-              fontSize: "14px",
+              fontSize: this.isMobile ? "12px" : "14px",
               color: "#d4d4d4",
             })
             .setOrigin(0, 0)
@@ -532,10 +523,12 @@ class DroneRepairScene extends Phaser.Scene {
             .text(
               this.gameWidth / 2,
               this.gameHeight - 40,
-              "💡 Haz clic en el campo azul para escribir tu respuesta",
+              this.isMobile
+                ? "💡 Toca el campo azul para escribir"
+                : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
-                fontSize: "16px",
+                fontSize: this.isMobile ? "14px" : "16px",
                 color: "#ffffff",
                 stroke: "#000000",
                 strokeThickness: 2,
@@ -561,7 +554,7 @@ class DroneRepairScene extends Phaser.Scene {
         const codeLine = this.add
           .text(0, y + 2, line, {
             fontFamily: "Consolas, monospace",
-            fontSize: "14px",
+            fontSize: this.isMobile ? "12px" : "14px",
             color: line.trim().startsWith("//") ? "#6a9955" : "#d4d4d4",
           })
           .setOrigin(0, 0)
@@ -626,8 +619,33 @@ class DroneRepairScene extends Phaser.Scene {
     const correctAnswer = this.currentExercise.correctValue;
 
     if (userAnswer === correctAnswer) {
-      // Respuesta correcta
-      this.showMessage(this.currentExercise.successMessage, "#4ade80");
+      // Respuesta correcta - solo mostrar mensaje si no es el último ejercicio
+      const nextIndex = this.currentExerciseIndex + 1;
+      if (nextIndex < this.exercises.length) {
+        this.showMessage(this.currentExercise.successMessage, "#4ade80");
+      }
+
+      // Mover el dron al centro cuando responde bien
+      const targetX = this.isMobile ? this.gameWidth / 2 : this.gameWidth / 2;
+      const returnX = this.isMobile ? 80 : 120;
+
+      this.tweens.add({
+        targets: this.drone,
+        x: targetX,
+        duration: 1000,
+        ease: "Power2",
+        onComplete: () => {
+          // Mover el dron de vuelta a su posición original después de 1 segundo
+          this.time.delayedCall(1000, () => {
+            this.tweens.add({
+              targets: this.drone,
+              x: returnX,
+              duration: 800,
+              ease: "Power2",
+            });
+          });
+        },
+      });
 
       // Efecto de éxito en el dron
       this.tweens.add({
@@ -639,28 +657,37 @@ class DroneRepairScene extends Phaser.Scene {
         repeat: 2,
       });
 
-      // Pasar al siguiente ejercicio
-      this.time.delayedCall(2500, () => {
-        const nextIndex = this.currentExerciseIndex + 1;
+      // Pasar al siguiente ejercicio con mensaje más corto
+      this.time.delayedCall(1000, () => {
         if (nextIndex < this.exercises.length) {
           this.loadExercise(nextIndex);
         } else {
-          // Todos los ejercicios completados
+          // Todos los ejercicios completados - cambiar dron a verde
+          this.drone.setTint(0x00ff00); // Verde
+
           this.showMessage(
-            "🎉 ¡Felicidades! Has completado todos los ejercicios.",
-            "#4ade80"
+            "🎉 ¡Felicidades! Has completado exitosamente todos los ejercicios de reparación. Los drones ya volvieron a la funcionalidad completa y están listos para volar nuevamente. ¡Excelente trabajo!",
+            "#4ade80",
+            true // Especial para felicitaciones - no auto-ocultar
           );
-          this.time.delayedCall(3000, () => {
-            this.scene.start("scenaVideo2");
+          this.time.delayedCall(5000, () => {
+            // Limpiar mensaje especial antes de cambiar escena
+            if (this.messageBox) {
+              this.messageBox.destroy();
+              this.messageBg.destroy();
+              this.messageBox = null;
+              this.messageBg = null;
+            }
+            // Descongelar pantalla
+            this.input.keyboard.enabled = true;
+            this.input.mouse.enabled = true;
+            this.scene.start("ArduinoGameScene");
           });
         }
       });
     } else {
-      // Respuesta incorrecta
-      this.showMessage(
-        "❌ Incorrecto. Inténtalo de nuevo o usa la pista.",
-        "#f87171"
-      );
+      // Respuesta incorrecta - mensaje más corto
+      this.showMessage("❌ Incorrecto. Inténtalo de nuevo.", "#f87171");
 
       // Efecto de error
       this.tweens.add({
@@ -688,8 +715,12 @@ class DroneRepairScene extends Phaser.Scene {
     this.showMessage(`💡 Pista: ${this.currentExercise.hint}`, "#fbbf24");
   }
 
-  showMessage(text, color = "#ffffff") {
+  showMessage(text, color = "#ffffff", isSpecial = false) {
     console.log("Función showMessage ejecutada con:", text, color);
+
+    // CONGELAR LA PANTALLA - Deshabilitar input
+    this.input.keyboard.enabled = false;
+    this.input.mouse.enabled = false;
 
     // Eliminar mensaje anterior si existe
     if (this.messageBox) {
@@ -746,23 +777,29 @@ class DroneRepairScene extends Phaser.Scene {
 
     console.log("Mensaje creado:", this.messageBox);
 
-    // Auto-ocultar después de un tiempo
-    this.time.delayedCall(4000, () => {
-      if (this.messageBox) {
-        this.tweens.add({
-          targets: [this.messageBox, this.messageBg],
-          alpha: 0,
-          duration: 500,
-          ease: "Power2",
-          onComplete: () => {
-            this.messageBox.destroy();
-            this.messageBg.destroy();
-            this.messageBox = null;
-            this.messageBg = null;
-          },
-        });
-      }
-    });
+    // Auto-ocultar después de un tiempo más corto (solo si no es mensaje especial)
+    if (!isSpecial) {
+      this.time.delayedCall(2000, () => {
+        if (this.messageBox) {
+          this.tweens.add({
+            targets: [this.messageBox, this.messageBg],
+            alpha: 0,
+            duration: 300,
+            ease: "Power2",
+            onComplete: () => {
+              this.messageBox.destroy();
+              this.messageBg.destroy();
+              this.messageBox = null;
+              this.messageBg = null;
+
+              // DESCONGELAR LA PANTALLA - Habilitar input nuevamente
+              this.input.keyboard.enabled = true;
+              this.input.mouse.enabled = true;
+            },
+          });
+        }
+      });
+    }
   }
 
   shutdown() {
