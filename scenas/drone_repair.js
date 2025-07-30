@@ -390,6 +390,11 @@ class DroneRepairScene extends Phaser.Scene {
       this.cursor.destroy();
       this.cursor = null;
     }
+    // Limpiar input HTML en móviles
+    if (this.htmlInput) {
+      this.htmlInput.remove();
+      this.htmlInput = null;
+    }
 
     // Limpiar título anterior
     if (this.exerciseTitle) {
@@ -462,42 +467,96 @@ class DroneRepairScene extends Phaser.Scene {
             )
             .setDepth(1);
 
-          // Texto del input
-          this.inputText = "";
-          this.inputTextObj = this.add
-            .text(
-              this.editorX + 60 + inputX + 4,
-              this.editorY + 20 + y + 3,
-              "",
-              {
-                fontFamily: "Consolas, monospace",
-                fontSize: this.isMobile ? "12px" : "14px",
-                color: "#ffffff",
+          // En móviles, usar input HTML real para abrir el teclado
+          if (this.isMobile) {
+            // Crear input HTML real
+            this.htmlInput = document.createElement("input");
+            this.htmlInput.type = "text";
+            this.htmlInput.style.position = "absolute";
+            this.htmlInput.style.left = this.editorX + 60 + inputX + 4 + "px";
+            this.htmlInput.style.top = this.editorY + 20 + y + 3 + "px";
+            this.htmlInput.style.width = "72px";
+            this.htmlInput.style.height = "16px";
+            this.htmlInput.style.background = "transparent";
+            this.htmlInput.style.border = "none";
+            this.htmlInput.style.outline = "none";
+            this.htmlInput.style.color = "#ffffff";
+            this.htmlInput.style.fontFamily = "Consolas, monospace";
+            this.htmlInput.style.fontSize = "12px";
+            this.htmlInput.style.zIndex = "1000";
+            this.htmlInput.style.caretColor = "#ffffff";
+
+            // Agregar al DOM
+            document.body.appendChild(this.htmlInput);
+
+            // Eventos del input HTML
+            this.htmlInput.addEventListener("input", (e) => {
+              this.inputText = e.target.value;
+              this.updateInputDisplay();
+            });
+
+            this.htmlInput.addEventListener("keydown", (e) => {
+              if (e.key === "Enter") {
+                this.checkAnswer();
+                e.preventDefault();
               }
-            )
-            .setOrigin(0, 0)
-            .setDepth(2);
+            });
 
-          // Cursor estilo VS Code
-          this.cursor = this.add
-            .rectangle(
-              this.editorX + 60 + inputX + 4,
-              this.editorY + 20 + y + 3,
-              1,
-              16,
-              0xffffff
-            )
-            .setOrigin(0, 0)
-            .setDepth(3);
+            // Hacer el input interactivo con Phaser
+            const inputArea = this.add
+              .rectangle(
+                this.editorX + 60 + inputX + 40,
+                this.editorY + 20 + y + 10,
+                80,
+                20,
+                0x000000,
+                0
+              )
+              .setInteractive({ useHandCursor: true })
+              .setDepth(10);
 
-          // Parpadeo del cursor
-          this.tweens.add({
-            targets: this.cursor,
-            alpha: 0,
-            duration: 800,
-            repeat: -1,
-            yoyo: true,
-          });
+            inputArea.on("pointerdown", () => {
+              this.htmlInput.focus();
+            });
+          } else {
+            // En desktop, usar el sistema original
+            // Texto del input
+            this.inputText = "";
+            this.inputTextObj = this.add
+              .text(
+                this.editorX + 60 + inputX + 4,
+                this.editorY + 20 + y + 3,
+                "",
+                {
+                  fontFamily: "Consolas, monospace",
+                  fontSize: "14px",
+                  color: "#ffffff",
+                }
+              )
+              .setOrigin(0, 0)
+              .setDepth(2);
+
+            // Cursor estilo VS Code
+            this.cursor = this.add
+              .rectangle(
+                this.editorX + 60 + inputX + 4,
+                this.editorY + 20 + y + 3,
+                1,
+                16,
+                0xffffff
+              )
+              .setOrigin(0, 0)
+              .setDepth(3);
+
+            // Parpadeo del cursor
+            this.tweens.add({
+              targets: this.cursor,
+              alpha: 0,
+              duration: 800,
+              repeat: -1,
+              yoyo: true,
+            });
+          }
 
           // Texto después del input
           const afterText = this.add
@@ -524,7 +583,7 @@ class DroneRepairScene extends Phaser.Scene {
               this.gameWidth / 2,
               this.gameHeight - 40,
               this.isMobile
-                ? "💡 Toca el campo azul para escribir"
+                ? "💡 Toca el campo azul para abrir el teclado"
                 : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
@@ -575,10 +634,7 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   updateInputDisplay() {
-    if (!this.inputTextObj || !this.inputBg) return;
-
-    // Actualizar texto del input
-    this.inputTextObj.setText(this.inputText);
+    if (!this.inputBg) return;
 
     // Calcular ancho del texto
     const textWidth = this.inputText.length * 8;
@@ -604,11 +660,21 @@ class DroneRepairScene extends Phaser.Scene {
         20
       );
 
-    // Actualizar posición del cursor
-    if (this.cursor) {
-      const cursorX = this.editorX + 60 + this.inputX + padding + textWidth;
-      this.cursor.x = cursorX;
-      this.cursor.y = this.editorY + 20 + this.inputY;
+    // En desktop, actualizar texto y cursor
+    if (!this.isMobile && this.inputTextObj) {
+      this.inputTextObj.setText(this.inputText);
+
+      // Actualizar posición del cursor
+      if (this.cursor) {
+        const cursorX = this.editorX + 60 + this.inputX + padding + textWidth;
+        this.cursor.x = cursorX;
+        this.cursor.y = this.editorY + 20 + this.inputY;
+      }
+    }
+
+    // En móviles, actualizar el input HTML
+    if (this.isMobile && this.htmlInput) {
+      this.htmlInput.style.width = newWidth - 8 + "px";
     }
   }
 
@@ -701,6 +767,9 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Limpiar input
     this.inputText = "";
+    if (this.isMobile && this.htmlInput) {
+      this.htmlInput.value = "";
+    }
     this.updateInputDisplay();
   }
 
@@ -808,8 +877,11 @@ class DroneRepairScene extends Phaser.Scene {
       this.cursor.destroy();
     }
 
-    // Limpiar elementos DOM
-    // No hay elementos DOM para limpiar aquí, ya que los botones son de Phaser
+    // Limpiar input HTML en móviles
+    if (this.htmlInput) {
+      this.htmlInput.remove();
+      this.htmlInput = null;
+    }
 
     // Limpiar el teclado
     this.input.keyboard.off("keydown");
