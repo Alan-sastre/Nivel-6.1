@@ -24,7 +24,7 @@ var config = {
     roundPixels: true,
     willReadFrequently: true,
   },
-  scene: [DroneRepairScene],
+  scene: DroneRepairScene,
   //[scenaPrincipal, scenaVideo, scenaFallos, scenaVideo2, DronesScene, scenaVideo3, ArduinoGameScene, Rompecabezas, scenaVideo4, Ultima
 };
 
