@@ -12,14 +12,15 @@ class DroneRepairScene extends Phaser.Scene {
                     '',
                     'void loop() {',
                     '  digitalWrite(13, HIGH);',
-                    '  delay(____);',
+                    '  delay(1000);',
                     '  digitalWrite(13, LOW);',
                     '  delay(1000);',
                     '}'
                 ],
                 missingLine: 7,
-                valueToReplace: '1000',
-                hint: 'El LED debe estar encendido por 1 segundo (____ milisegundos)',
+                missingValue: '1000',
+                correctValue: '1000',
+                hint: 'El LED debe estar encendido por 1 segundo (1000 milisegundos)',
                 droneState: 'off',
                 successMessage: '¡Correcto! El LED ahora parpadea cada 1 segundo.'
             },
@@ -35,7 +36,7 @@ class DroneRepairScene extends Phaser.Scene {
                     '',
                     'void loop() {',
                     '  // Enciende el motor',
-                    '  analogWrite(motorPin, ____);',
+                    '  analogWrite(motorPin, 200);',
                     '  delay(2000);',
                     '  // Apaga el motor',
                     '  analogWrite(motorPin, 0);',
@@ -43,7 +44,8 @@ class DroneRepairScene extends Phaser.Scene {
                     '}'
                 ],
                 missingLine: 10,
-                valueToReplace: '200',
+                missingValue: '200',
+                correctValue: '200',
                 hint: 'La velocidad del motor es de 200 (rango 0-255)',
                 droneState: 'slow',
                 successMessage: '¡Correcto! El motor ahora gira a la velocidad correcta.'
@@ -72,9 +74,9 @@ class DroneRepairScene extends Phaser.Scene {
                     '}'
                 ],
                 missingLine: 13,
-                correctAnswer: '    digitalWrite(ledPin, HIGH);',
-                hint: 'Usa: digitalWrite(ledPin, HIGH);',
-                solution: 'digitalWrite(ledPin, HIGH);',
+                missingValue: 'digitalWrite',
+                correctValue: 'digitalWrite',
+                hint: 'Usa la función para escribir en un pin digital',
                 droneState: 'slow',
                 successMessage: '¡Excelente! El LED se enciende con luz ambiental.'
             }
@@ -151,35 +153,40 @@ class DroneRepairScene extends Phaser.Scene {
     }
     
     createInputField() {
-        // Crear un campo de entrada de Phaser
-        this.inputElement = document.createElement('input');
-        this.inputElement.type = 'text';
-        this.inputElement.className = 'code-input';
-        this.inputElement.style.cssText = `
-            position: absolute;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            background: #2a2a2a;
-            color: #4ec9b0;
-            border: 1px solid #4ec9b0;
-            border-radius: 3px;
-            padding: 2px 5px;
-            margin: 0 2px;
-            width: 60px;
-            outline: none;
-            z-index: 1000;
-            display: none;
-        `;
+        // Usaremos un objeto de texto de Phaser para el input
+        this.inputText = '';
+        this.isInputActive = false;
         
-        // Manejar la tecla Enter
-        this.inputElement.addEventListener('keydown', (event) => {
+        // Manejar entrada de teclado
+        this.input.keyboard.off('keydown'); // Remove any existing listeners
+        this.input.keyboard.on('keydown', (event) => {
+            if (!this.isInputActive) return;
+            
+            // Prevenir el comportamiento por defecto para evitar duplicación
+            event.preventDefault();
+            
             if (event.key === 'Enter') {
                 this.checkAnswer();
+                return;
+            }
+            
+            let textChanged = false;
+            
+            if (event.key === 'Backspace') {
+                if (this.inputText.length > 0) {
+                    this.inputText = this.inputText.slice(0, -1);
+                    textChanged = true;
+                }
+            } else if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                this.inputText += event.key;
+                textChanged = true;
+            }
+            
+            // Actualizar el texto del input solo si hubo cambios
+            if (textChanged && this.inputTextObj) {
+                this.updateInputDisplay();
             }
         });
-        
-        // Asegurarse de que el campo de entrada esté en el DOM
-        document.body.appendChild(this.inputElement);
     }
     
     createButtons() {
@@ -224,18 +231,22 @@ class DroneRepairScene extends Phaser.Scene {
         
         // Mostrar código con el campo de entrada en la línea faltante
         const lineHeight = 24;
+        const lineNumberWidth = 40; // Ancho para los números de línea
         let currentY = 0;
         
         // Ocultar el campo de entrada hasta que lo necesitemos
         if (this.inputElement) {
             this.inputElement.style.display = 'none';
+        } else {
+            // Crear el elemento de entrada si no existe
+            this.createInputField();
         }
         
         // Añadir número de línea y código
         exercise.code.forEach((line, i) => {
             // Número de línea
             const lineNumber = this.add.text(
-                0,
+                10, // Margen izquierdo
                 currentY,
                 `${i + 1}`.padStart(2, ' '),
                 { fontFamily: 'Courier New', fontSize: '16px', color: '#6a9955' }
@@ -243,51 +254,93 @@ class DroneRepairScene extends Phaser.Scene {
             
             // Si es la línea que necesita entrada
             if (i === exercise.missingLine) {
-                // Encontrar la posición de los guiones bajos
-                const valuePos = line.indexOf('____');
-                const beforeValue = line.substring(0, valuePos);
-                const afterValue = line.substring(valuePos + 4);
+                const missingValue = exercise.missingValue;
+                const valueIndex = line.indexOf(missingValue);
+                const beforeValue = line.substring(0, valueIndex);
+                const afterValue = line.substring(valueIndex + missingValue.length);
                 
-                // Mostrar la parte antes del valor
+                // Mostrar la parte antes del valor faltante
                 const beforeText = this.add.text(
-                    0,
+                    lineNumberWidth,
                     currentY,
                     beforeValue,
                     { fontFamily: 'Courier New', fontSize: '16px', color: '#d4d4b0' }
                 );
                 
-                // Mostrar la parte después del valor
+                // Mostrar la parte después del valor faltante
                 const afterText = this.add.text(
-                    0, // Posición X se ajustará después
+                    0, // Se posicionará después del input
                     currentY,
                     afterValue,
                     { fontFamily: 'Courier New', fontSize: '16px', color: '#d4d4b0' }
                 );
                 
-                // Ajustar posición de afterText basado en el ancho del input
-                afterText.x = beforeText.width + 60; // Espacio para el input
+                // Calcular posición del input
+                const beforeTextWidth = beforeText.width;
                 
-                // Mostrar el valor correcto como pista en el placeholder
-                const placeholder = exercise.valueToReplace || '';
+                // Posición relativa al contenedor de código
+                const inputX = beforeTextWidth + 5;
+                const inputY = currentY - 2; // Ajuste fino para centrar verticalmente
                 
-                // Posicionar el campo de entrada
-                const inputX = this.editorX + 20 + beforeText.width;
-                const inputY = this.editorY + 40 + currentY - 2; // Ajuste fino de posición vertical
+                // Crear un contenedor para la línea de código
+                const lineContainer = this.add.container(lineNumberWidth, 0);
                 
-                this.inputElement.style.left = inputX + 'px';
-                this.inputElement.style.top = inputY + 'px';
-                this.inputElement.style.width = '60px';
-                this.inputElement.style.display = 'inline';
-                this.inputElement.value = '';
-                this.inputElement.placeholder = placeholder;
-                this.inputElement.focus();
+                // Posicionar el texto antes del input
+                beforeText.x = 0;
+                beforeText.y = currentY;
                 
-                // Agregar elementos al contenedor
-                this.codeContainer.add([beforeText, afterText]);
+                // Calcular el ancho del input basado en el texto faltante
+                const charWidth = 9; // Ancho aproximado de cada carácter en píxeles
+                const minInputWidth = 50;
+                const padding = 6; // 3px a cada lado
+                const inputWidth = Math.max(missingValue.length * charWidth + padding * 2, minInputWidth);
+                
+                // Crear el fondo del input
+                this.inputBg = this.add.graphics()
+                    .fillStyle(0x1e1e1e, 1)
+                    .fillRect(inputX, currentY - 1, inputWidth, 20)
+                    .lineStyle(1, 0x569cd6, 1)
+                    .strokeRect(inputX, currentY - 1, inputWidth, 20);
+                
+                // Crear el texto del input
+                this.inputText = '';
+                this.inputTextObj = this.add.text(
+                    inputX + padding,
+                    currentY,
+                    '',
+                    { 
+                        fontFamily: 'Courier New', 
+                        fontSize: '16px', 
+                        color: '#4ec9b0',
+                        backgroundColor: 'transparent',
+                        padding: 0
+                    }
+                );
+                
+                // Guardar referencias para actualización
+                this.afterText = afterText;
+                this.inputX = inputX;
+                this.inputY = currentY;
+                this.lineContainer = lineContainer;
+                this.padding = padding;
+                
+                // Posicionar el texto después del input
+                afterText.x = inputX + inputWidth + 2;
+                afterText.y = currentY;
+                
+                // Agregar elementos al contenedor de línea
+                lineContainer.add([beforeText, this.inputBg, this.inputTextObj, afterText]);
+                this.codeContainer.add([lineNumber, lineContainer]);
+                
+                // Activar el input
+                this.isInputActive = true;
+                
+                // Crear cursor parpadeante
+                this.createCursor(inputX + 3, currentY);
             } else {
                 // Mostrar línea normal de código
                 const lineText = this.add.text(
-                    20, // Espacio para los números de línea
+                    lineNumberWidth, // Alineado con el texto de las otras líneas
                     currentY,
                     line,
                     { fontFamily: 'Courier New', fontSize: '16px', color: '#d4d4b0' }
@@ -367,23 +420,94 @@ class DroneRepairScene extends Phaser.Scene {
         });
     }
     
+    createCursor(x, y) {
+        if (this.cursor) {
+            this.cursor.destroy();
+        }
+        
+        // Crear el cursor invisible
+        this.cursor = this.add.rectangle(x, y, 0, 0, 0x000000, 0);
+        this.cursor.setOrigin(0, 0);
+        this.cursor.setDepth(100);
+        
+        return this.cursor;
+    }
+    
+    updateInputDisplay() {
+        if (!this.inputTextObj) return;
+        
+        // Actualizar el texto
+        this.inputTextObj.setText(this.inputText || '');
+        
+        // Calcular el ancho del texto actual
+        const charWidth = 9; // Ancho aproximado de cada carácter
+        const textWidth = this.inputText.length * charWidth;
+        const minInputWidth = 50;
+        const inputWidth = Math.max(textWidth + this.padding * 2, minInputWidth);
+        
+        // Actualizar el fondo del input
+        this.inputBg.clear()
+            .fillStyle(0x1e1e1e, 1)
+            .fillRect(this.inputX, this.inputY - 1, inputWidth, 20)
+            .lineStyle(1, 0x569cd6, 1)
+            .strokeRect(this.inputX, this.inputY - 1, inputWidth, 20);
+        
+        // Mover el cursor
+        if (this.cursor) {
+            const cursorX = this.inputX + this.padding + textWidth;
+            this.cursor.x = cursorX;
+            this.cursor.y = this.inputY + 2;
+            this.cursor.setDepth(100);
+        }
+        
+        // Mover el texto después del input
+        if (this.afterText) {
+            this.afterText.x = this.inputX + inputWidth + 2;
+            
+            // Forzar actualización de la pantalla
+            this.scene.scene.systems.displayList.depthSort();
+        }
+    }
+    
     checkAnswer() {
         const exercise = this.exercises[this.currentExercise];
-        const userAnswer = this.inputElement ? this.inputElement.value.trim() : '';
+        const userAnswer = this.inputText.trim();
         
         if (userAnswer === exercise.correctValue) {
-            this.showMessage(exercise.successMessage, '#4caf50');
+            // Respuesta correcta
+            this.showMessage(exercise.successMessage, '#00ff00');
+            
+            // Actualizar el estado del dron
+            this.updateDroneState(exercise.droneState);
+            
+            // Desactivar input actual
+            this.isInputActive = false;
+            if (this.cursor) {
+                this.cursor.destroy();
+                this.cursor = null;
+            }
+            
+            // Pasar al siguiente ejercicio después de un retraso
             this.time.delayedCall(1500, () => {
-                const next = this.currentExercise + 1;
-                if (next < this.exercises.length) {
-                    this.loadExercise(next);
+                const nextIndex = this.currentExercise + 1;
+                if (nextIndex < this.exercises.length) {
+                    this.loadExercise(nextIndex);
                 } else {
-                    this.showMessage('¡Felicidades! Has completado todos los ejercicios.', '#4caf50');
+                    this.showMessage('¡Has completado todos los ejercicios!', '#00ff00');
+                    // Volver al menú después de un retraso
+                    this.time.delayedCall(2000, () => {
+                        this.scene.start('MenuScene');
+                    });
                 }
             });
         } else {
-            this.showMessage('Respuesta incorrecta. Intenta de nuevo.', '#f44336');
-            this.inputField.value = '';
+            // Respuesta incorrecta
+            this.showMessage('Respuesta incorrecta. Intenta de nuevo.', '#ff0000');
+            this.inputText = '';
+            if (this.inputTextObj) {
+                this.inputTextObj.setText(' ');
+            }
+            this.updateInputDisplay();
         }
     }
     
@@ -402,11 +526,16 @@ class DroneRepairScene extends Phaser.Scene {
         if (this.inputElement && this.inputElement.parentNode) {
             this.inputElement.parentNode.removeChild(this.inputElement);
         }
-        if (this.inputField) {
-            this.inputField.destroy();
-        }
         if (this.hintWindow) {
             this.hintWindow.destroy();
         }
+        
+        // Limpiar el cursor si existe
+        if (this.cursor) {
+            this.cursor.destroy();
+        }
+        
+        // Limpiar el teclado
+        this.input.keyboard.off('keydown');
     }
 }
