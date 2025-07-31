@@ -120,23 +120,21 @@ class DroneRepairScene extends Phaser.Scene {
     // Configurar entrada de teclado
     this.setupKeyboard();
 
-    // En móviles, crear un input oculto para forzar la apertura del teclado
+    // En móviles, mostrar directamente las opciones de respuesta
     if (this.isMobile) {
-      this.createHiddenInput();
-      
       // Mostrar mensaje de ayuda para móviles
       this.time.delayedCall(500, () => {
         const helpText = this.add
           .text(
             this.gameWidth / 2,
             this.gameHeight - 40,
-            "Toca el botón ⌨️ para abrir el teclado",
+            "Toca el botón ? para ver las opciones de respuesta",
             {
               fontFamily: "Arial",
-              fontSize: "16px",
+              fontSize: "18px",
               color: "#ffffff",
               stroke: "#000000",
-              strokeThickness: 2,
+              strokeThickness: 3,
             }
           )
           .setOrigin(0.5)
@@ -160,29 +158,13 @@ class DroneRepairScene extends Phaser.Scene {
         });
       });
       
-      // Abrir automáticamente el modal de entrada para móviles
-      this.time.delayedCall(800, () => {
+      // Crear un botón grande y visible para mostrar las opciones de respuesta
+      this.createMobileOptionsButton();
+      
+      // Abrir automáticamente el modal de entrada para móviles después de un breve retraso
+      this.time.delayedCall(1000, () => {
         // Mostrar directamente las opciones de respuesta
         this.createMobileInput();
-        
-        // Como alternativa, también preparamos el teclado virtual
-        if (this.htmlInput) {
-          this.htmlInput.focus();
-          // Forzar la apertura del teclado virtual con múltiples intentos
-          const forceKeyboard = () => {
-            if (this.isAndroid) {
-              this.htmlInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-            } else if (this.isIOS) {
-              this.htmlInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-            }
-          };
-          
-          // Múltiples intentos para abrir el teclado
-          forceKeyboard();
-          setTimeout(forceKeyboard, 300);
-          setTimeout(forceKeyboard, 600);
-          setTimeout(forceKeyboard, 1000);
-        }
       });
     }
   }
@@ -698,9 +680,9 @@ class DroneRepairScene extends Phaser.Scene {
               if (this.htmlInput) {
                 this.htmlInput.blur();
               }
-              // Pequeño delay antes de mostrar el modal
+              // Pequeño delay antes de mostrar las opciones
               setTimeout(() => {
-                this.showMobileInputModal();
+                this.createMobileInput();
               }, 50);
             });
             
@@ -711,7 +693,7 @@ class DroneRepairScene extends Phaser.Scene {
                 if (this.htmlInput) {
                   this.htmlInput.blur();
                 }
-                this.showMobileInputModal();
+                this.createMobileInput();
               }, 100);
             });
           } else {
@@ -1150,6 +1132,12 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   createMobileInput() {
+    // Si ya existe un contenedor de opciones, destruirlo primero
+    if (this.mobileInputContainer) {
+      this.mobileInputContainer.destroy();
+      this.mobileInputContainer = null;
+    }
+    
     // Crear opciones de respuesta para móviles
     const correctAnswer = this.currentExercise.correctValue;
 
@@ -1157,7 +1145,7 @@ class DroneRepairScene extends Phaser.Scene {
     let options = [correctAnswer];
     const correctNum = parseInt(correctAnswer);
 
-    // Agregar opciones incorrectas cercanas
+    // Agregar opciones incorrectas cercanas pero más variadas
     options.push(correctNum + 500);
     options.push(correctNum - 500);
     options.push(correctNum + 1000);
@@ -1168,150 +1156,185 @@ class DroneRepairScene extends Phaser.Scene {
     // Mezclar las opciones
     options = options.sort(() => Math.random() - 0.5);
 
-    // Crear contenedor de opciones
+    // Crear contenedor de opciones centrado en la pantalla para mejor visibilidad
     const optionsContainer = this.add.container(
       this.gameWidth / 2,
-      this.gameHeight - 120
-    );
+      this.gameHeight / 2
+    ).setDepth(200);
 
-    // Fondo del contenedor (más grande para incluir la pista)
+    // Fondo semi-transparente para toda la pantalla
+    const fullScreenBg = this.add
+      .rectangle(0, 0, this.gameWidth * 2, this.gameHeight * 2, 0x000000, 0.7)
+      .setOrigin(0.5)
+      .setDepth(199);
+    optionsContainer.add(fullScreenBg);
+
+    // Fondo del contenedor principal (más grande y atractivo)
     const bg = this.add
       .graphics()
-      .fillStyle(0x000000, 0.9)
-      .fillRoundedRect(-200, -120, 400, 240, 15)
-      .lineStyle(2, 0x007acc, 1)
-      .strokeRoundedRect(-200, -120, 400, 240, 15)
-      .setDepth(100);
+      .fillStyle(0x1e293b, 0.95) // Color más moderno
+      .fillRoundedRect(-200, -200, 400, 400, 20)
+      .lineStyle(3, 0x3b82f6, 1) // Borde azul más moderno
+      .strokeRoundedRect(-200, -200, 400, 400, 20)
+      .setDepth(200);
     optionsContainer.add(bg);
 
-    // Título
+    // Título más atractivo
     const title = this.add
-      .text(0, -100, "Selecciona tu respuesta:", {
+      .text(0, -160, "Selecciona tu respuesta", {
         fontFamily: "Arial",
-        fontSize: "20px",
+        fontSize: "24px",
         color: "#ffffff",
         stroke: "#000000",
         strokeThickness: 3,
       })
       .setOrigin(0.5)
-      .setDepth(101);
+      .setDepth(201);
     optionsContainer.add(title);
     
-    // Mostrar la pista directamente
+    // Mostrar la pista directamente con mejor formato
     const hint = this.add
-      .text(0, -70, `💡 Pista: ${this.currentExercise.hint}`, {
+      .text(0, -120, `💡 ${this.currentExercise.hint}`, {
         fontFamily: "Arial",
-        fontSize: "16px",
-        color: "#fbbf24",
+        fontSize: "18px",
+        color: "#fbbf24", // Amarillo
         stroke: "#000000",
         strokeThickness: 2,
         align: "center",
-        wordWrap: { width: 380 }
+        wordWrap: { width: 360 }
       })
       .setOrigin(0.5)
-      .setDepth(101);
+      .setDepth(201);
     optionsContainer.add(hint);
 
-    // Crear botones de opciones (2 filas de 3)
+    // Crear botones de opciones (2 filas de 3) más grandes y atractivos
     options.slice(0, 6).forEach((option, index) => {
       const row = Math.floor(index / 3);
       const col = index % 3;
-      const x = (col - 1) * 110;
-      const y = row * 60 - 10;
+      const x = (col - 1) * 120; // Más separados
+      const y = row * 70 - 30; // Más separados
 
+      // Botón con mejor estilo
       const button = this.add
-        .rectangle(x, y, 90, 50, 0x007acc, 0.8)
+        .rectangle(x, y, 100, 60, 0x3b82f6, 0.9) // Azul más moderno
         .setInteractive({ useHandCursor: true })
-        .setDepth(101);
+        .setDepth(201)
+        .setOrigin(0.5)
+        .setStrokeStyle(2, 0x60a5fa); // Borde más claro
 
       const buttonText = this.add
         .text(x, y, option.toString(), {
           fontFamily: "Arial",
-          fontSize: "20px",
+          fontSize: "22px", // Texto más grande
           color: "#ffffff",
           stroke: "#000000",
           strokeThickness: 2,
         })
         .setOrigin(0.5)
-        .setDepth(102);
+        .setDepth(202);
 
       optionsContainer.add(button);
       optionsContainer.add(buttonText);
 
-      // Eventos del botón
+      // Eventos del botón con mejores efectos
       button.on("pointerover", () => {
-        button.setFillStyle(0x0056b3);
+        button.setFillStyle(0x2563eb); // Azul más oscuro al pasar el mouse
+        button.setScale(1.05);
         buttonText.setScale(1.05);
       });
 
       button.on("pointerout", () => {
-        button.setFillStyle(0x007acc, 0.8);
+        button.setFillStyle(0x3b82f6, 0.9); // Volver al color original
+        button.setScale(1);
         buttonText.setScale(1);
       });
 
       button.on("pointerdown", () => {
         // Verificar si es la respuesta correcta
         if (option.toString() === correctAnswer) {
-          // Respuesta correcta
-          button.setFillStyle(0x22c55e);
+          // Respuesta correcta - efecto más llamativo
+          button.setFillStyle(0x22c55e); // Verde
           buttonText.setText("✅ " + option.toString());
 
-          // Efecto de éxito
+          // Efecto de éxito mejorado
           this.tweens.add({
             targets: [button, buttonText],
-            scaleX: 1.1,
-            scaleY: 1.1,
-            duration: 200,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 300,
             yoyo: true,
             repeat: 1,
+            ease: 'Bounce.Out'
           });
 
-          // Pasar al siguiente ejercicio después de 1 segundo
-          this.time.delayedCall(1000, () => {
+          // Sonido de éxito (si está disponible)
+          if (this.sound && this.sound.add) {
+            try {
+              const successSound = this.sound.add('success');
+              if (successSound) successSound.play({ volume: 0.5 });
+            } catch (e) {
+              // Si no existe el sonido, ignorar
+            }
+          }
+
+          // Pasar al siguiente ejercicio después de 1.5 segundos
+          this.time.delayedCall(1500, () => {
             optionsContainer.destroy();
             this.inputText = correctAnswer;
             this.checkAnswer();
           });
         } else {
-          // Respuesta incorrecta
-          button.setFillStyle(0xef4444);
+          // Respuesta incorrecta - efecto mejorado
+          button.setFillStyle(0xef4444); // Rojo
           buttonText.setText("❌ " + option.toString());
 
-          // Efecto de error
+          // Efecto de error mejorado
           this.tweens.add({
             targets: [button, buttonText],
-            x: button.x - 5,
-            duration: 100,
+            x: button.x - 8,
+            duration: 80,
             yoyo: true,
-            repeat: 2,
+            repeat: 3,
+            ease: 'Sine.easeInOut'
           });
+
+          // Sonido de error (si está disponible)
+          if (this.sound && this.sound.add) {
+            try {
+              const errorSound = this.sound.add('error');
+              if (errorSound) errorSound.play({ volume: 0.5 });
+            } catch (e) {
+              // Si no existe el sonido, ignorar
+            }
+          }
 
           // Restaurar después de 1 segundo
           this.time.delayedCall(1000, () => {
-            button.setFillStyle(0x007acc, 0.8);
+            button.setFillStyle(0x3b82f6, 0.9);
             buttonText.setText(option.toString());
+            button.setScale(1);
             buttonText.setScale(1);
           });
         }
       });
     });
 
-    // Agregar botón de cierre
+    // Agregar botón de cierre más elegante
     const closeButton = this.add
-      .rectangle(160, -100, 30, 30, 0xef4444, 0.9)
+      .circle(180, -180, 20, 0xef4444, 0.9)
       .setInteractive({ useHandCursor: true })
-      .setDepth(101);
+      .setDepth(201);
       
     const closeX = this.add
-      .text(160, -100, "X", {
+      .text(180, -180, "X", {
         fontFamily: "Arial",
-        fontSize: "18px",
+        fontSize: "20px",
         color: "#ffffff",
         stroke: "#000000",
         strokeThickness: 2,
       })
       .setOrigin(0.5)
-      .setDepth(102);
+      .setDepth(202);
       
     optionsContainer.add(closeButton);
     optionsContainer.add(closeX);
@@ -1328,39 +1351,48 @@ class DroneRepairScene extends Phaser.Scene {
     });
     
     closeButton.on("pointerdown", () => {
-      // Destruir el contenedor de opciones
-      optionsContainer.destroy();
-      
-      // Mostrar mensaje de ayuda
-      const helpText = this.add
-        .text(
-          this.gameWidth / 2,
-          this.gameHeight - 40,
-          "Toca el botón ⌨️ para abrir el teclado",
-          {
-            fontFamily: "Arial",
-            fontSize: "16px",
-            color: "#ffffff",
-            stroke: "#000000",
-            strokeThickness: 2,
-          }
-        )
-        .setOrigin(0.5)
-        .setDepth(100);
-        
-      // Hacer parpadear el texto para llamar la atención
+      // Efecto de cierre
       this.tweens.add({
-        targets: helpText,
-        alpha: 0.5,
-        duration: 500,
-        yoyo: true,
-        repeat: 5,
+        targets: optionsContainer,
+        alpha: 0,
+        scale: 0.8,
+        duration: 200,
         onComplete: () => {
+          // Destruir el contenedor de opciones
+          optionsContainer.destroy();
+          
+          // Mostrar mensaje de ayuda
+          const helpText = this.add
+            .text(
+              this.gameWidth / 2,
+              this.gameHeight - 40,
+              "Toca el botón ? para ver las opciones de respuesta",
+              {
+                fontFamily: "Arial",
+                fontSize: "16px",
+                color: "#ffffff",
+                stroke: "#000000",
+                strokeThickness: 2,
+              }
+            )
+            .setOrigin(0.5)
+            .setDepth(100);
+            
+          // Hacer parpadear el texto para llamar la atención
           this.tweens.add({
             targets: helpText,
-            alpha: 0,
+            alpha: 0.5,
             duration: 500,
-            onComplete: () => helpText.destroy()
+            yoyo: true,
+            repeat: 3,
+            onComplete: () => {
+              this.tweens.add({
+                targets: helpText,
+                alpha: 0,
+                duration: 500,
+                onComplete: () => helpText.destroy()
+              });
+            }
           });
         }
       });
@@ -1370,316 +1402,131 @@ class DroneRepairScene extends Phaser.Scene {
     const successMessage = this.add
       .text(0, 110, "¡Toca la respuesta correcta!", {
         fontFamily: "Arial",
-        fontSize: "16px",
+        fontSize: "18px",
         color: "#22c55e",
         stroke: "#000000",
         strokeThickness: 2,
       })
       .setOrigin(0.5)
-      .setDepth(101);
+      .setDepth(201);
     optionsContainer.add(successMessage);
     
-    // Guardar referencia
+    // Efecto de entrada
+    optionsContainer.setScale(0.8);
+    optionsContainer.alpha = 0;
+    this.tweens.add({
+      targets: optionsContainer,
+      scale: 1,
+      alpha: 1,
+      duration: 300,
+      ease: 'Back.easeOut'
+    });
+    
+    // Guardar referencia al contenedor para poder destruirlo después
     this.mobileInputContainer = optionsContainer;
   }
 
+  // Esta función ya no se usa, pero se mantiene por compatibilidad
   createHiddenInput() {
-    // Crear un input HTML oculto que se active automáticamente
-    this.hiddenInput = document.createElement("input");
-    this.hiddenInput.type = "tel";
-    this.hiddenInput.style.position = "absolute";
-    this.hiddenInput.style.left = "10px";
-    this.hiddenInput.style.top = "10px";
-    this.hiddenInput.style.width = "1px";
-    this.hiddenInput.style.height = "1px";
-    this.hiddenInput.style.opacity = "0.01"; // Ligeramente visible para debugging
-    this.hiddenInput.style.pointerEvents = "auto"; // Permitir interacción
-    this.hiddenInput.style.zIndex = "9999"; // Alto z-index
-    this.hiddenInput.setAttribute("inputmode", "numeric");
-    this.hiddenInput.setAttribute("pattern", "[0-9]*");
-    this.hiddenInput.setAttribute("autocomplete", "off");
-    this.hiddenInput.setAttribute("autofocus", "true");
-    this.hiddenInput.setAttribute("enterkeyhint", "done");
-    this.hiddenInput.value = ""; // Asegurar que esté vacío
-
-    document.body.appendChild(this.hiddenInput);
-    
-    // Función para forzar la apertura del teclado
-    const forceKeyboardOpen = () => {
-      if (!this.hiddenInput) return;
-      
-      this.hiddenInput.focus();
-      this.hiddenInput.click();
-      
-      // Usar las propiedades de detección de plataforma
-      if (this.isAndroid) {
-        this.hiddenInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-      } else if (this.isIOS) {
-        this.hiddenInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-      }
-    };
-
-    // Múltiples intentos para activar el teclado
-    this.time.delayedCall(300, forceKeyboardOpen);
-    this.time.delayedCall(600, forceKeyboardOpen);
-    this.time.delayedCall(1000, forceKeyboardOpen);
-    this.time.delayedCall(2000, forceKeyboardOpen);
-
-    // Activar cuando se toque la pantalla
-    this.input.on("pointerdown", () => {
-      // Solo activar si no hay un input HTML visible
-      if (!this.htmlInput || document.activeElement !== this.htmlInput) {
-        forceKeyboardOpen();
-      }
-    });
-
-    // Eventos directos en el input oculto
-    this.hiddenInput.addEventListener("touchstart", (e) => {
-      e.stopPropagation();
-      forceKeyboardOpen();
-    });
-    
-    this.hiddenInput.addEventListener("click", (e) => {
-      e.stopPropagation();
-      forceKeyboardOpen();
-    });
-    
-    // Evento para cuando el input recibe el foco
-    this.hiddenInput.addEventListener("focus", () => {
-      console.log("Input oculto enfocado - teclado debería abrirse");
-    });
-    
-    // Evento para cuando se presiona Enter
-    this.hiddenInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        // Si hay un input visible, transferir el valor
-        if (this.htmlInput) {
-          this.htmlInput.value = this.hiddenInput.value;
-          this.inputText = this.hiddenInput.value;
-          this.updateInputDisplay();
-          this.hiddenInput.value = "";
-        }
-        e.preventDefault();
-      }
-    });
-    
-    // Agregar evento global para cualquier toque (una sola vez)
-    document.addEventListener("touchstart", () => {
-      if (this.scene.isActive("DroneRepairScene")) {
-        forceKeyboardOpen();
-      }
-    }, { once: true });
-    
-    // Crear un botón flotante pequeño para abrir el teclado
-    const keyboardHelper = document.createElement("div");
-    keyboardHelper.textContent = "⌨️";
-    keyboardHelper.style.position = "fixed";
-    keyboardHelper.style.bottom = "10px";
-    keyboardHelper.style.right = "10px";
-    keyboardHelper.style.width = "40px";
-    keyboardHelper.style.height = "40px";
-    keyboardHelper.style.backgroundColor = "rgba(0, 122, 204, 0.7)";
-    keyboardHelper.style.color = "white";
-    keyboardHelper.style.borderRadius = "50%";
-    keyboardHelper.style.display = "flex";
-    keyboardHelper.style.justifyContent = "center";
-    keyboardHelper.style.alignItems = "center";
-    keyboardHelper.style.fontSize = "20px";
-    keyboardHelper.style.zIndex = "9998";
-    keyboardHelper.style.cursor = "pointer";
-    keyboardHelper.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
-    
-    keyboardHelper.addEventListener("touchstart", (e) => {
-      e.stopPropagation();
-      this.showMobileInputModal();
-    });
-    
-    keyboardHelper.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.showMobileInputModal();
-    });
-    
-    document.body.appendChild(keyboardHelper);
-    
-    // Guardar referencia para poder eliminarlo después
-    this.keyboardHelper = keyboardHelper;
-    
-    // Eliminar el helper cuando se destruya la escena
-    this.events.on("shutdown", () => {
-      if (this.hiddenInput) {
-        this.hiddenInput.remove();
-        this.hiddenInput = null;
-      }
-      if (this.keyboardHelper) {
-        this.keyboardHelper.remove();
-        this.keyboardHelper = null;
-      }
-    });
+    // No hacemos nada, ahora usamos createMobileInput() en su lugar
+    console.log("createHiddenInput() está obsoleto, usando createMobileInput() en su lugar");
+    return;
+  }
   }
 
+  // Esta función ya no se usa, pero se mantiene por compatibilidad
   showMobileInputModal() {
-    // Crear modal para input en móviles
-    const modal = document.createElement("div");
-    modal.style.position = "fixed";
-    modal.style.top = "0";
-    modal.style.left = "0";
-    modal.style.width = "100%";
-    modal.style.height = "100%";
-    modal.style.backgroundColor = "rgba(0,0,0,0.8)";
-    modal.style.zIndex = "10000";
-    modal.style.display = "flex";
-    modal.style.justifyContent = "center";
-    modal.style.alignItems = "center";
-    modal.style.flexDirection = "column";
+    // No hacemos nada, ahora usamos createMobileInput() en su lugar
+    console.log("showMobileInputModal() está obsoleto, usando createMobileInput() en su lugar");
+    
+    // Llamar directamente a createMobileInput para mostrar las opciones
+    this.createMobileInput();
+    return;
+  }
 
-    const title = document.createElement("div");
-    title.textContent = "Escribe tu respuesta:";
-    title.style.color = "#ffffff";
-    title.style.fontSize = "20px";
-    title.style.marginBottom = "20px";
-    title.style.textAlign = "center";
+  // No hay más código aquí, la función termina arriba
+  }
 
-    const input = document.createElement("input");
-    input.type = "tel"; // Cambiar a tel para mejor compatibilidad móvil
-    input.style.width = "250px";
-    input.style.height = "60px";
-    input.style.fontSize = "28px";
-    input.style.textAlign = "center";
-    input.style.border = "4px solid #007acc";
-    input.style.borderRadius = "15px";
-    input.style.outline = "none";
-    input.style.backgroundColor = "#1e1e1e";
-    input.style.color = "#ffffff";
-    input.placeholder = "Toca aquí para escribir";
-    input.style.caretColor = "#ffffff";
-    input.setAttribute("inputmode", "numeric");
-    input.setAttribute("pattern", "[0-9]*");
-    input.setAttribute("autocomplete", "off");
-    input.setAttribute("autofocus", "true");
-    input.setAttribute("enterkeyhint", "done");
-
-    const button = document.createElement("button");
-    button.textContent = "Enviar";
-    button.style.marginTop = "25px";
-    button.style.padding = "15px 40px";
-    button.style.fontSize = "20px";
-    button.style.backgroundColor = "#22c55e";
-    button.style.color = "#ffffff";
-    button.style.border = "none";
-    button.style.borderRadius = "10px";
-    button.style.cursor = "pointer";
-
-    const closeButton = document.createElement("button");
-    closeButton.textContent = "✕";
-    closeButton.style.position = "absolute";
-    closeButton.style.top = "20px";
-    closeButton.style.right = "20px";
-    closeButton.style.width = "40px";
-    closeButton.style.height = "40px";
-    closeButton.style.fontSize = "20px";
-    closeButton.style.backgroundColor = "#ef4444";
-    closeButton.style.color = "#ffffff";
-    closeButton.style.border = "none";
-    closeButton.style.borderRadius = "50%";
-    closeButton.style.cursor = "pointer";
-
-    modal.appendChild(closeButton);
-    modal.appendChild(title);
-    modal.appendChild(input);
-    modal.appendChild(button);
-
-    document.body.appendChild(modal);
-
-    // Función para forzar la apertura del teclado
-    const forceKeyboardOpen = () => {
-      input.focus();
-      input.click();
-      input.select();
-      
-      // Usar las propiedades de detección de plataforma de la clase
-      if (this.isAndroid) {
-        input.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-      } else if (this.isIOS) {
-        input.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-      }
-    };
-
-    // Múltiples intentos para abrir el teclado
-    setTimeout(forceKeyboardOpen, 100);
-    setTimeout(forceKeyboardOpen, 300);
-    setTimeout(forceKeyboardOpen, 500);
-    setTimeout(forceKeyboardOpen, 1000);
-
-    // Eventos
-    const handleSubmit = () => {
-      this.inputText = input.value;
-      this.updateInputDisplay();
-      document.body.removeChild(modal);
-      this.checkAnswer();
-    };
-
-    const handleClose = () => {
-      document.body.removeChild(modal);
-    };
-
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        handleSubmit();
-      }
-    });
-
-    // Eventos adicionales para asegurar que el teclado se abra
-    input.addEventListener("touchstart", (e) => {
-      e.stopPropagation();
-      forceKeyboardOpen();
-    });
-
-    input.addEventListener("click", (e) => {
-      e.stopPropagation();
-      forceKeyboardOpen();
+  createMobileOptionsButton() {
+    // Crear un botón flotante grande y visible para mostrar las opciones de respuesta
+    const buttonSize = 60;
+    const padding = 10;
+    
+    // Contenedor del botón (para efectos y animaciones)
+    this.optionsButtonContainer = this.add.container(
+      this.gameWidth - buttonSize/2 - padding,
+      this.gameHeight - buttonSize/2 - padding
+    ).setDepth(150);
+    
+    // Fondo del botón con efecto de brillo
+    const buttonBg = this.add.graphics()
+      .fillStyle(0x007acc, 1)
+      .fillCircle(0, 0, buttonSize/2)
+      .lineStyle(3, 0x00a8ff, 1)
+      .strokeCircle(0, 0, buttonSize/2);
+    
+    // Texto del botón
+    const buttonText = this.add.text(0, 0, "?", {
+      fontFamily: "Arial",
+      fontSize: "32px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    
+    // Añadir al contenedor
+    this.optionsButtonContainer.add(buttonBg);
+    this.optionsButtonContainer.add(buttonText);
+    
+    // Hacer el botón interactivo
+    buttonBg.setInteractive(new Phaser.Geom.Circle(0, 0, buttonSize/2), Phaser.Geom.Circle.Contains);
+    
+    // Efectos al interactuar
+    buttonBg.on("pointerover", () => {
+      buttonBg.clear()
+        .fillStyle(0x0056b3, 1)
+        .fillCircle(0, 0, buttonSize/2)
+        .lineStyle(3, 0x00a8ff, 1)
+        .strokeCircle(0, 0, buttonSize/2);
+      buttonText.setScale(1.1);
     });
     
-    // Agregar eventos a los botones con stopPropagation
-    button.addEventListener("touchstart", (e) => e.stopPropagation());
-    button.addEventListener("click", (e) => {
-      e.stopPropagation();
-      handleSubmit();
+    buttonBg.on("pointerout", () => {
+      buttonBg.clear()
+        .fillStyle(0x007acc, 1)
+        .fillCircle(0, 0, buttonSize/2)
+        .lineStyle(3, 0x00a8ff, 1)
+        .strokeCircle(0, 0, buttonSize/2);
+      buttonText.setScale(1);
     });
     
-    closeButton.addEventListener("touchstart", (e) => e.stopPropagation());
-    closeButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      handleClose();
+    // Al hacer clic, mostrar las opciones de respuesta
+    buttonBg.on("pointerdown", () => {
+      // Efecto de pulsación
+      this.tweens.add({
+        targets: this.optionsButtonContainer,
+        scale: 0.9,
+        duration: 100,
+        yoyo: true,
+        onComplete: () => {
+          // Mostrar las opciones de respuesta
+          this.createMobileInput();
+        }
+      });
     });
     
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) {
-        handleClose();
-      }
+    // Añadir una animación sutil para llamar la atención
+    this.tweens.add({
+      targets: this.optionsButtonContainer,
+      scale: 1.1,
+      duration: 800,
+      yoyo: true,
+      repeat: 2,
+      ease: 'Sine.easeInOut'
     });
     
-    // Agregar un mensaje de ayuda si el teclado no se abre
-    const helpText = document.createElement("div");
-    helpText.textContent = "Si el teclado no aparece, toca aquí";
-    helpText.style.color = "#ffffff";
-    helpText.style.fontSize = "14px";
-    helpText.style.marginTop = "20px";
-    helpText.style.padding = "10px";
-    helpText.style.backgroundColor = "rgba(0, 122, 204, 0.5)";
-    helpText.style.borderRadius = "8px";
-    helpText.style.cursor = "pointer";
-    
-    helpText.addEventListener("touchstart", (e) => {
-      e.stopPropagation();
-      forceKeyboardOpen();
-    });
-    
-    helpText.addEventListener("click", (e) => {
-      e.stopPropagation();
-      forceKeyboardOpen();
-    });
-    
-    modal.appendChild(helpText);
+    // Guardar referencia para poder destruirlo después
+    this.optionsButton = buttonBg;
   }
 
   shutdown() {
@@ -1694,16 +1541,21 @@ class DroneRepairScene extends Phaser.Scene {
       this.htmlInput = null;
     }
 
-    // Limpiar input oculto
-    if (this.hiddenInput) {
-      this.hiddenInput.remove();
-      this.hiddenInput = null;
-    }
-
     // Limpiar input móvil
     if (this.mobileInputContainer) {
       this.mobileInputContainer.destroy();
       this.mobileInputContainer = null;
+    }
+    
+    // Limpiar botón de opciones
+    if (this.optionsButtonContainer) {
+      this.optionsButtonContainer.destroy();
+      this.optionsButtonContainer = null;
+    }
+    
+    // Limpiar botón de opciones (referencia antigua)
+    if (this.optionsButton) {
+      this.optionsButton = null;
     }
 
     // Limpiar el teclado
