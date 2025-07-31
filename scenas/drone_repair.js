@@ -1086,78 +1086,54 @@ class DroneRepairScene extends Phaser.Scene {
     // Mezclar las opciones
     options = options.sort(() => Math.random() - 0.5);
 
-    // Crear contenedor de opciones centrado en la pantalla para mejor visibilidad
+    // Crear contenedor de opciones debajo del dron
     const optionsContainer = this.add
-      .container(this.gameWidth / 2, this.gameHeight / 2)
+      .container(this.gameWidth / 2, this.gameHeight * 0.75)
       .setDepth(200);
 
-    // Fondo semi-transparente para toda la pantalla
-    const fullScreenBg = this.add
-      .rectangle(0, 0, this.gameWidth * 2, this.gameHeight * 2, 0x000000, 0.7)
-      .setOrigin(0.5)
-      .setDepth(199);
-    optionsContainer.add(fullScreenBg);
-
-    // Fondo del contenedor principal (más grande y atractivo)
+    // Fondo semi-transparente solo para el área de opciones
     const bg = this.add
       .graphics()
       .fillStyle(0x1e293b, 0.95) // Color más moderno
-      .fillRoundedRect(-200, -200, 400, 400, 20)
-      .lineStyle(3, 0x3b82f6, 1) // Borde azul más moderno
-      .strokeRoundedRect(-200, -200, 400, 400, 20)
+      .fillRoundedRect(-150, -60, 300, 120, 15)
+      .lineStyle(2, 0x3b82f6, 1) // Borde azul más moderno
+      .strokeRoundedRect(-150, -60, 300, 120, 15)
       .setDepth(200);
     optionsContainer.add(bg);
 
-    // Título más atractivo y visible
+    // Título más pequeño
     const title = this.add
-      .text(0, -160, "Selecciona tu respuesta", {
+      .text(0, -45, "Selecciona tu respuesta:", {
         fontFamily: "Arial",
-        fontSize: "30px", // Título más grande
+        fontSize: "18px",
         color: "#ffffff",
         stroke: "#000000",
-        strokeThickness: 4, // Contorno más grueso
+        strokeThickness: 2,
       })
       .setOrigin(0.5)
       .setDepth(201);
     optionsContainer.add(title);
 
-    // Mostrar la pista directamente con mejor formato y mayor visibilidad
-    const hint = this.add
-      .text(0, -120, `💡 ${this.currentExercise.hint}`, {
-        fontFamily: "Arial",
-        fontSize: "24px", // Pista más grande
-        color: "#fbbf24", // Amarillo
-        stroke: "#000000",
-        strokeThickness: 3, // Contorno más grueso
-        align: "center",
-        wordWrap: { width: 360 },
-      })
-      .setOrigin(0.5)
-      .setDepth(201);
-    optionsContainer.add(hint);
+    // Crear botones de opciones (1 fila de 4) más pequeños
+    options.slice(0, 4).forEach((option, index) => {
+      const x = (index - 1.5) * 70; // 4 opciones en una fila horizontal
+      const y = 10; // Debajo del título
 
-    // Crear botones de opciones (2 filas de 3) más grandes y atractivos
-    options.slice(0, 6).forEach((option, index) => {
-      const row = Math.floor(index / 3);
-      const col = index % 3;
-      const x = (col - 1) * 130; // Más separados
-      const y = row * 80 - 30; // Más separados
-
-      // Botón con mejor estilo - más grande para facilitar el toque
+      // Botón más pequeño pero fácil de tocar
       const button = this.add
-        .rectangle(x, y, 120, 70, 0x3b82f6, 0.9) // Azul más moderno y botón más grande
+        .rectangle(x, y, 60, 40, 0x3b82f6, 0.9) // Botón más pequeño
         .setInteractive({ useHandCursor: true })
         .setDepth(201)
         .setOrigin(0.5)
-        .setStrokeStyle(3, 0x60a5fa); // Borde más grueso y claro
+        .setStrokeStyle(2, 0x60a5fa); // Borde más delgado
 
       const buttonText = this.add
         .text(x, y, option.toString(), {
           fontFamily: "Arial",
-          fontSize: "24px", // Texto más grande para mejor visibilidad
+          fontSize: "16px", // Texto más pequeño
           color: "#ffffff",
           stroke: "#000000",
-          strokeThickness: 3, // Contorno más grueso para mejor legibilidad
+          strokeThickness: 2, // Contorno más delgado
         })
         .setOrigin(0.5)
         .setDepth(202);
@@ -1239,109 +1215,30 @@ class DroneRepairScene extends Phaser.Scene {
       });
     });
 
-    // Agregar botón de cierre más elegante
-    const closeButton = this.add
-      .circle(180, -180, 20, 0xef4444, 0.9)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(201);
-
-    const closeX = this.add
-      .text(180, -180, "X", {
+    // Agregar mensaje de ayuda
+    const helpMessage = this.add
+      .text(0, 35, "💡 " + this.currentExercise.hint, {
         fontFamily: "Arial",
-        fontSize: "20px",
-        color: "#ffffff",
+        fontSize: "14px",
+        color: "#fbbf24",
         stroke: "#000000",
-        strokeThickness: 2,
-      })
-      .setOrigin(0.5)
-      .setDepth(202);
-
-    optionsContainer.add(closeButton);
-    optionsContainer.add(closeX);
-
-    // Eventos del botón de cierre
-    closeButton.on("pointerover", () => {
-      closeButton.setFillStyle(0xdc2626);
-      closeX.setScale(1.1);
-    });
-
-    closeButton.on("pointerout", () => {
-      closeButton.setFillStyle(0xef4444, 0.9);
-      closeX.setScale(1);
-    });
-
-    closeButton.on("pointerdown", () => {
-      // Efecto de cierre
-      this.tweens.add({
-        targets: optionsContainer,
-        alpha: 0,
-        scale: 0.8,
-        duration: 200,
-        onComplete: () => {
-          // Destruir el contenedor de opciones
-          optionsContainer.destroy();
-
-          // Mostrar mensaje de ayuda más grande y visible
-          const helpText = this.add
-            .text(
-              this.gameWidth / 2,
-              this.gameHeight - 40,
-              "Toca el botón ? para ver las opciones",
-              {
-                fontFamily: "Arial",
-                fontSize: "24px", // Texto más grande
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 3, // Contorno más grueso
-                backgroundColor: "#007acc", // Fondo azul para destacar
-                padding: { x: 15, y: 8 }, // Padding para el fondo
-              }
-            )
-            .setOrigin(0.5)
-            .setDepth(100);
-
-          // Hacer parpadear el texto para llamar la atención con efecto más llamativo
-          this.tweens.add({
-            targets: helpText,
-            alpha: 0.6,
-            duration: 800,
-            yoyo: true,
-            repeat: 3,
-            onComplete: () => {
-              this.tweens.add({
-                targets: helpText,
-                alpha: 0,
-                duration: 800, // Más lento para dar tiempo a leerlo
-                onComplete: () => helpText.destroy(),
-              });
-            },
-          });
-        },
-      });
-    });
-
-    // Agregar mensaje de éxito
-    const successMessage = this.add
-      .text(0, 110, "¡Toca la respuesta correcta!", {
-        fontFamily: "Arial",
-        fontSize: "18px",
-        color: "#22c55e",
-        stroke: "#000000",
-        strokeThickness: 2,
+        strokeThickness: 1,
+        align: "center",
+        wordWrap: { width: 280 },
       })
       .setOrigin(0.5)
       .setDepth(201);
-    optionsContainer.add(successMessage);
+    optionsContainer.add(helpMessage);
 
-    // Efecto de entrada
-    optionsContainer.setScale(0.8);
+    // Efecto de entrada más sutil
+    optionsContainer.setScale(0.9);
     optionsContainer.alpha = 0;
     this.tweens.add({
       targets: optionsContainer,
       scale: 1,
       alpha: 1,
-      duration: 300,
-      ease: "Back.easeOut",
+      duration: 200,
+      ease: "Power2",
     });
 
     // Guardar referencia al contenedor para poder destruirlo después
