@@ -66,6 +66,10 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Detectar si es móvil
     this.isMobile = this.gameWidth < 768;
+    
+    // Detectar plataforma para optimizaciones específicas
+    this.isAndroid = navigator.userAgent.match(/Android/i) ? true : false;
+    this.isIOS = navigator.userAgent.match(/iPhone|iPad|iPod/i) ? true : false;
 
     // Habilitar input para toda la escena
     this.input.setDefaultCursor("pointer");
@@ -118,6 +122,67 @@ class DroneRepairScene extends Phaser.Scene {
     // En móviles, crear un input oculto para forzar la apertura del teclado
     if (this.isMobile) {
       this.createHiddenInput();
+      
+      // Mostrar mensaje de ayuda para móviles
+      this.time.delayedCall(500, () => {
+        const helpText = this.add
+          .text(
+            this.gameWidth / 2,
+            this.gameHeight - 40,
+            "Toca el botón ⌨️ para abrir el teclado",
+            {
+              fontFamily: "Arial",
+              fontSize: "16px",
+              color: "#ffffff",
+              stroke: "#000000",
+              strokeThickness: 2,
+            }
+          )
+          .setOrigin(0.5)
+          .setDepth(100);
+          
+        // Hacer parpadear el texto para llamar la atención
+        this.tweens.add({
+          targets: helpText,
+          alpha: 0.5,
+          duration: 500,
+          yoyo: true,
+          repeat: 5,
+          onComplete: () => {
+            this.tweens.add({
+              targets: helpText,
+              alpha: 0,
+              duration: 500,
+              onComplete: () => helpText.destroy()
+            });
+          }
+        });
+      });
+      
+      // Abrir automáticamente el modal de entrada para móviles
+      this.time.delayedCall(800, () => {
+        // Mostrar directamente las opciones de respuesta
+        this.createMobileInput();
+        
+        // Como alternativa, también preparamos el teclado virtual
+        if (this.htmlInput) {
+          this.htmlInput.focus();
+          // Forzar la apertura del teclado virtual con múltiples intentos
+          const forceKeyboard = () => {
+            if (this.isAndroid) {
+              this.htmlInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+            } else if (this.isIOS) {
+              this.htmlInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+            }
+          };
+          
+          // Múltiples intentos para abrir el teclado
+          forceKeyboard();
+          setTimeout(forceKeyboard, 300);
+          setTimeout(forceKeyboard, 600);
+          setTimeout(forceKeyboard, 1000);
+        }
+      });
     }
   }
 
@@ -923,10 +988,17 @@ class DroneRepairScene extends Phaser.Scene {
       return;
     }
     console.log("Mostrando pista:", this.currentExercise.hint);
-    this.showMessage(`💡 Pista: ${this.currentExercise.hint}`, "#fbbf24");
+    
+    // Eliminar mensaje anterior si existe para evitar problemas
+    if (this.messageBox) {
+      this.closeMessage();
+    }
+    
+    // Mostrar el mensaje de pista con auto-cierre
+    this.showMessage(`💡 Pista: ${this.currentExercise.hint}`, "#fbbf24", false, 3000);
   }
 
-  showMessage(text, color = "#ffffff", isSpecial = false) {
+  showMessage(text, color = "#ffffff", isSpecial = false, duration = 2000) {
     console.log("Función showMessage ejecutada con:", text, color);
 
     // CONGELAR LA PANTALLA - Deshabilitar input
@@ -936,7 +1008,7 @@ class DroneRepairScene extends Phaser.Scene {
     // Eliminar mensaje anterior si existe
     if (this.messageBox) {
       console.log("Destruyendo mensaje anterior");
-      this.messageBox.destroy();
+      this.closeMessage();
     }
 
     // Crear fondo semi-transparente para el mensaje
@@ -988,29 +1060,93 @@ class DroneRepairScene extends Phaser.Scene {
 
     console.log("Mensaje creado:", this.messageBox);
 
-    // Auto-ocultar después de un tiempo más corto (solo si no es mensaje especial)
+    // Auto-ocultar después de un tiempo (solo si no es mensaje especial)
     if (!isSpecial) {
-      this.time.delayedCall(2000, () => {
-        if (this.messageBox) {
-          this.tweens.add({
-            targets: [this.messageBox, this.messageBg],
-            alpha: 0,
-            duration: 300,
-            ease: "Power2",
-            onComplete: () => {
-              this.messageBox.destroy();
-              this.messageBg.destroy();
-              this.messageBox = null;
-              this.messageBg = null;
-
-              // DESCONGELAR LA PANTALLA - Habilitar input nuevamente
-              this.input.keyboard.enabled = true;
-              this.input.mouse.enabled = true;
-            },
-          });
-        }
+      // Asegurar que el mensaje se cierre después del tiempo especificado
+      this.messageCloseTimer = this.time.delayedCall(duration, () => {
+        this.closeMessage();
       });
+    } else {
+      // Para mensajes especiales, agregar un botón para cerrar
+      const closeButton = this.add
+        .text(this.gameWidth / 2, this.gameHeight / 2 + 70, "[ Cerrar ]", {
+          fontFamily: "Arial",
+          fontSize: "16px",
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setDepth(202)
+        .setInteractive({ useHandCursor: true })
+        .on("pointerdown", () => {
+          this.closeMessage();
+          closeButton.destroy();
+        });
+      
+      // Agregar al grupo de mensaje para que se elimine junto con él
+      if (this.messageBox) {
+        this.messageBox.closeButton = closeButton;
+      }
     }
+  }
+  
+  closeMessage() {
+    // Función para cerrar mensajes de forma segura
+    if (this.messageBox || this.messageBg) {
+      // Cancelar cualquier timer pendiente
+      if (this.messageCloseTimer) {
+        this.messageCloseTimer.remove();
+        this.messageCloseTimer = null;
+      }
+      
+      // Animar la desaparición
+      this.tweens.add({
+        targets: [this.messageBox, this.messageBg],
+        alpha: 0,
+        duration: 300,
+        ease: "Power2",
+        onComplete: () => {
+          // Eliminar el botón de cierre si existe
+          if (this.messageBox && this.messageBox.closeButton) {
+            this.messageBox.closeButton.destroy();
+          }
+          
+          // Eliminar los elementos del mensaje
+          if (this.messageBox) {
+            this.messageBox.destroy();
+            this.messageBox = null;
+          }
+          
+          if (this.messageBg) {
+            this.messageBg.destroy();
+            this.messageBg = null;
+          }
+
+          // DESCONGELAR LA PANTALLA - Habilitar input nuevamente
+          this.input.keyboard.enabled = true;
+          this.input.mouse.enabled = true;
+          
+          // Si estamos en móvil, intentar enfocar el input nuevamente
+          if (this.isMobile && this.htmlInput) {
+            setTimeout(() => {
+              this.htmlInput.focus();
+              // Forzar la apertura del teclado virtual
+              if (navigator.userAgent.match(/Android/i)) {
+                this.htmlInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+              } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                this.htmlInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+              }
+            }, 300);
+          }
+        },
+      });
+    } else {
+      // Si no hay mensaje, solo asegurar que el input esté habilitado
+      this.input.keyboard.enabled = true;
+      this.input.mouse.enabled = true;
+    }
+  }
   }
 
   createMobileInput() {
@@ -1038,21 +1174,21 @@ class DroneRepairScene extends Phaser.Scene {
       this.gameHeight - 120
     );
 
-    // Fondo del contenedor
+    // Fondo del contenedor (más grande para incluir la pista)
     const bg = this.add
       .graphics()
       .fillStyle(0x000000, 0.9)
-      .fillRoundedRect(-200, -80, 400, 160, 15)
+      .fillRoundedRect(-200, -120, 400, 240, 15)
       .lineStyle(2, 0x007acc, 1)
-      .strokeRoundedRect(-200, -80, 400, 160, 15)
+      .strokeRoundedRect(-200, -120, 400, 240, 15)
       .setDepth(100);
     optionsContainer.add(bg);
 
     // Título
     const title = this.add
-      .text(0, -60, "Selecciona tu respuesta:", {
+      .text(0, -100, "Selecciona tu respuesta:", {
         fontFamily: "Arial",
-        fontSize: "18px",
+        fontSize: "20px",
         color: "#ffffff",
         stroke: "#000000",
         strokeThickness: 3,
@@ -1060,23 +1196,38 @@ class DroneRepairScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(101);
     optionsContainer.add(title);
+    
+    // Mostrar la pista directamente
+    const hint = this.add
+      .text(0, -70, `💡 Pista: ${this.currentExercise.hint}`, {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#fbbf24",
+        stroke: "#000000",
+        strokeThickness: 2,
+        align: "center",
+        wordWrap: { width: 380 }
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+    optionsContainer.add(hint);
 
     // Crear botones de opciones (2 filas de 3)
     options.slice(0, 6).forEach((option, index) => {
       const row = Math.floor(index / 3);
       const col = index % 3;
-      const x = (col - 1) * 100;
-      const y = row * 50 - 10;
+      const x = (col - 1) * 110;
+      const y = row * 60 - 10;
 
       const button = this.add
-        .rectangle(x, y, 80, 40, 0x007acc, 0.8)
+        .rectangle(x, y, 90, 50, 0x007acc, 0.8)
         .setInteractive({ useHandCursor: true })
         .setDepth(101);
 
       const buttonText = this.add
         .text(x, y, option.toString(), {
           fontFamily: "Arial",
-          fontSize: "16px",
+          fontSize: "20px",
           color: "#ffffff",
           stroke: "#000000",
           strokeThickness: 2,
@@ -1145,6 +1296,89 @@ class DroneRepairScene extends Phaser.Scene {
       });
     });
 
+    // Agregar botón de cierre
+    const closeButton = this.add
+      .rectangle(160, -100, 30, 30, 0xef4444, 0.9)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(101);
+      
+    const closeX = this.add
+      .text(160, -100, "X", {
+        fontFamily: "Arial",
+        fontSize: "18px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 2,
+      })
+      .setOrigin(0.5)
+      .setDepth(102);
+      
+    optionsContainer.add(closeButton);
+    optionsContainer.add(closeX);
+    
+    // Eventos del botón de cierre
+    closeButton.on("pointerover", () => {
+      closeButton.setFillStyle(0xdc2626);
+      closeX.setScale(1.1);
+    });
+    
+    closeButton.on("pointerout", () => {
+      closeButton.setFillStyle(0xef4444, 0.9);
+      closeX.setScale(1);
+    });
+    
+    closeButton.on("pointerdown", () => {
+      // Destruir el contenedor de opciones
+      optionsContainer.destroy();
+      
+      // Mostrar mensaje de ayuda
+      const helpText = this.add
+        .text(
+          this.gameWidth / 2,
+          this.gameHeight - 40,
+          "Toca el botón ⌨️ para abrir el teclado",
+          {
+            fontFamily: "Arial",
+            fontSize: "16px",
+            color: "#ffffff",
+            stroke: "#000000",
+            strokeThickness: 2,
+          }
+        )
+        .setOrigin(0.5)
+        .setDepth(100);
+        
+      // Hacer parpadear el texto para llamar la atención
+      this.tweens.add({
+        targets: helpText,
+        alpha: 0.5,
+        duration: 500,
+        yoyo: true,
+        repeat: 5,
+        onComplete: () => {
+          this.tweens.add({
+            targets: helpText,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => helpText.destroy()
+          });
+        }
+      });
+    });
+    
+    // Agregar mensaje de éxito
+    const successMessage = this.add
+      .text(0, 110, "¡Toca la respuesta correcta!", {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#22c55e",
+        stroke: "#000000",
+        strokeThickness: 2,
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+    optionsContainer.add(successMessage);
+    
     // Guardar referencia
     this.mobileInputContainer = optionsContainer;
   }
@@ -1154,60 +1388,133 @@ class DroneRepairScene extends Phaser.Scene {
     this.hiddenInput = document.createElement("input");
     this.hiddenInput.type = "tel";
     this.hiddenInput.style.position = "absolute";
-    this.hiddenInput.style.left = "-9999px";
-    this.hiddenInput.style.top = "-9999px";
+    this.hiddenInput.style.left = "10px";
+    this.hiddenInput.style.top = "10px";
     this.hiddenInput.style.width = "1px";
     this.hiddenInput.style.height = "1px";
-    this.hiddenInput.style.opacity = "0";
-    this.hiddenInput.style.pointerEvents = "none";
+    this.hiddenInput.style.opacity = "0.01"; // Ligeramente visible para debugging
+    this.hiddenInput.style.pointerEvents = "auto"; // Permitir interacción
+    this.hiddenInput.style.zIndex = "9999"; // Alto z-index
     this.hiddenInput.setAttribute("inputmode", "numeric");
     this.hiddenInput.setAttribute("pattern", "[0-9]*");
-    // Agregar autocomplete para mejorar compatibilidad
     this.hiddenInput.setAttribute("autocomplete", "off");
-    // Agregar autofocus para forzar el teclado
     this.hiddenInput.setAttribute("autofocus", "true");
+    this.hiddenInput.setAttribute("enterkeyhint", "done");
+    this.hiddenInput.value = ""; // Asegurar que esté vacío
 
     document.body.appendChild(this.hiddenInput);
-
-    // Activar el input después de un breve delay
-    this.time.delayedCall(500, () => {
+    
+    // Función para forzar la apertura del teclado
+    const forceKeyboardOpen = () => {
+      if (!this.hiddenInput) return;
+      
       this.hiddenInput.focus();
       this.hiddenInput.click();
-      // Forzar la apertura del teclado virtual
-      if (navigator.userAgent.match(/Android/i)) {
+      
+      // Usar las propiedades de detección de plataforma
+      if (this.isAndroid) {
         this.hiddenInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+      } else if (this.isIOS) {
         this.hiddenInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
       }
-    });
+    };
 
-    // También activar cuando se toque la pantalla
+    // Múltiples intentos para activar el teclado
+    this.time.delayedCall(300, forceKeyboardOpen);
+    this.time.delayedCall(600, forceKeyboardOpen);
+    this.time.delayedCall(1000, forceKeyboardOpen);
+    this.time.delayedCall(2000, forceKeyboardOpen);
+
+    // Activar cuando se toque la pantalla
     this.input.on("pointerdown", () => {
-      this.hiddenInput.focus();
-      // Forzar la apertura del teclado virtual
-      if (navigator.userAgent.match(/Android/i)) {
-        this.hiddenInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-        this.hiddenInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+      // Solo activar si no hay un input HTML visible
+      if (!this.htmlInput || document.activeElement !== this.htmlInput) {
+        forceKeyboardOpen();
       }
     });
 
-    // Agregar evento global para cualquier toque
-    document.addEventListener(
-      "touchstart",
-      () => {
-        if (this.hiddenInput) {
-          this.hiddenInput.focus();
-          // Forzar la apertura del teclado virtual
-          if (navigator.userAgent.match(/Android/i)) {
-            this.hiddenInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-          } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-            this.hiddenInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-          }
+    // Eventos directos en el input oculto
+    this.hiddenInput.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+      forceKeyboardOpen();
+    });
+    
+    this.hiddenInput.addEventListener("click", (e) => {
+      e.stopPropagation();
+      forceKeyboardOpen();
+    });
+    
+    // Evento para cuando el input recibe el foco
+    this.hiddenInput.addEventListener("focus", () => {
+      console.log("Input oculto enfocado - teclado debería abrirse");
+    });
+    
+    // Evento para cuando se presiona Enter
+    this.hiddenInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        // Si hay un input visible, transferir el valor
+        if (this.htmlInput) {
+          this.htmlInput.value = this.hiddenInput.value;
+          this.inputText = this.hiddenInput.value;
+          this.updateInputDisplay();
+          this.hiddenInput.value = "";
         }
-      },
-      { once: true }
-    );
+        e.preventDefault();
+      }
+    });
+    
+    // Agregar evento global para cualquier toque (una sola vez)
+    document.addEventListener("touchstart", () => {
+      if (this.scene.isActive("DroneRepairScene")) {
+        forceKeyboardOpen();
+      }
+    }, { once: true });
+    
+    // Crear un botón flotante pequeño para abrir el teclado
+    const keyboardHelper = document.createElement("div");
+    keyboardHelper.textContent = "⌨️";
+    keyboardHelper.style.position = "fixed";
+    keyboardHelper.style.bottom = "10px";
+    keyboardHelper.style.right = "10px";
+    keyboardHelper.style.width = "40px";
+    keyboardHelper.style.height = "40px";
+    keyboardHelper.style.backgroundColor = "rgba(0, 122, 204, 0.7)";
+    keyboardHelper.style.color = "white";
+    keyboardHelper.style.borderRadius = "50%";
+    keyboardHelper.style.display = "flex";
+    keyboardHelper.style.justifyContent = "center";
+    keyboardHelper.style.alignItems = "center";
+    keyboardHelper.style.fontSize = "20px";
+    keyboardHelper.style.zIndex = "9998";
+    keyboardHelper.style.cursor = "pointer";
+    keyboardHelper.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+    
+    keyboardHelper.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+      this.showMobileInputModal();
+    });
+    
+    keyboardHelper.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.showMobileInputModal();
+    });
+    
+    document.body.appendChild(keyboardHelper);
+    
+    // Guardar referencia para poder eliminarlo después
+    this.keyboardHelper = keyboardHelper;
+    
+    // Eliminar el helper cuando se destruya la escena
+    this.events.on("shutdown", () => {
+      if (this.hiddenInput) {
+        this.hiddenInput.remove();
+        this.hiddenInput = null;
+      }
+      if (this.keyboardHelper) {
+        this.keyboardHelper.remove();
+        this.keyboardHelper = null;
+      }
+    });
   }
 
   showMobileInputModal() {
@@ -1247,6 +1554,9 @@ class DroneRepairScene extends Phaser.Scene {
     input.style.caretColor = "#ffffff";
     input.setAttribute("inputmode", "numeric");
     input.setAttribute("pattern", "[0-9]*");
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("autofocus", "true");
+    input.setAttribute("enterkeyhint", "done");
 
     const button = document.createElement("button");
     button.textContent = "Enviar";
@@ -1280,30 +1590,25 @@ class DroneRepairScene extends Phaser.Scene {
 
     document.body.appendChild(modal);
 
-    // Enfocar el input automáticamente de forma más agresiva
-    setTimeout(() => {
+    // Función para forzar la apertura del teclado
+    const forceKeyboardOpen = () => {
       input.focus();
       input.click();
       input.select();
-      // Forzar la apertura del teclado virtual
-      if (navigator.userAgent.match(/Android/i)) {
+      
+      // Usar las propiedades de detección de plataforma de la clase
+      if (this.isAndroid) {
         input.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+      } else if (this.isIOS) {
         input.dispatchEvent(new MouseEvent('click', {bubbles: true}));
       }
-    }, 100);
+    };
 
-    // Intentar enfocar nuevamente después de un delay más largo
-    setTimeout(() => {
-      input.focus();
-      input.click();
-      // Segundo intento de forzar la apertura del teclado
-      if (navigator.userAgent.match(/Android/i)) {
-        input.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
-      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-        input.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-      }
-    }, 500);
+    // Múltiples intentos para abrir el teclado
+    setTimeout(forceKeyboardOpen, 100);
+    setTimeout(forceKeyboardOpen, 300);
+    setTimeout(forceKeyboardOpen, 500);
+    setTimeout(forceKeyboardOpen, 1000);
 
     // Eventos
     const handleSubmit = () => {
@@ -1323,23 +1628,58 @@ class DroneRepairScene extends Phaser.Scene {
       }
     });
 
-    // Evento adicional para asegurar que el teclado se abra
-    input.addEventListener("touchstart", () => {
-      input.focus();
+    // Eventos adicionales para asegurar que el teclado se abra
+    input.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+      forceKeyboardOpen();
     });
 
-    input.addEventListener("click", () => {
-      input.focus();
-      input.select();
+    input.addEventListener("click", (e) => {
+      e.stopPropagation();
+      forceKeyboardOpen();
     });
-
-    button.addEventListener("click", handleSubmit);
-    closeButton.addEventListener("click", handleClose);
+    
+    // Agregar eventos a los botones con stopPropagation
+    button.addEventListener("touchstart", (e) => e.stopPropagation());
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handleSubmit();
+    });
+    
+    closeButton.addEventListener("touchstart", (e) => e.stopPropagation());
+    closeButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handleClose();
+    });
+    
     modal.addEventListener("click", (e) => {
       if (e.target === modal) {
         handleClose();
       }
     });
+    
+    // Agregar un mensaje de ayuda si el teclado no se abre
+    const helpText = document.createElement("div");
+    helpText.textContent = "Si el teclado no aparece, toca aquí";
+    helpText.style.color = "#ffffff";
+    helpText.style.fontSize = "14px";
+    helpText.style.marginTop = "20px";
+    helpText.style.padding = "10px";
+    helpText.style.backgroundColor = "rgba(0, 122, 204, 0.5)";
+    helpText.style.borderRadius = "8px";
+    helpText.style.cursor = "pointer";
+    
+    helpText.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+      forceKeyboardOpen();
+    });
+    
+    helpText.addEventListener("click", (e) => {
+      e.stopPropagation();
+      forceKeyboardOpen();
+    });
+    
+    modal.appendChild(helpText);
   }
 
   shutdown() {
