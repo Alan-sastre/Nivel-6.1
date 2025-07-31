@@ -305,7 +305,7 @@ class DroneRepairScene extends Phaser.Scene {
     });
 
     // Función para manejar el clic en el botón de pista
-    const onHintClick = (pointer) => {
+    const onHintClick = () => {
       // Efecto visual inmediato
       this.hintButton.setFillStyle(0xf59e0b);
       this.hintButtonText.setScale(0.95);
@@ -322,12 +322,29 @@ class DroneRepairScene extends Phaser.Scene {
       this.showHint();
     };
     
-    // Asignar manejadores de eventos
-    this.hintButton.on("pointerdown", (pointer) => onHintClick(pointer));
-    this.hintButton.on("pointerup", (pointer) => onHintClick(pointer));
-    this.hintButtonText.setInteractive({ useHandCursor: true })
-      .on("pointerdown", (pointer) => onHintClick(pointer))
-      .on("pointerup", (pointer) => onHintClick(pointer));
+    // Asignar manejadores de eventos para el botón de pista
+    const hintButtonEvents = {
+      pointerdown: onHintClick,
+      pointerup: onHintClick,
+      pointerover: () => this.hintButton.setFillStyle(0xf59e0b),
+      pointerout: () => this.hintButton.setFillStyle(0xfbbf24)
+    };
+    
+    // Aplicar eventos al botón y al texto
+    Object.entries(hintButtonEvents).forEach(([event, handler]) => {
+      this.hintButton.on(event, handler);
+      this.hintButtonText.on(event, (pointer) => {
+        if (pointer) pointer.event.preventDefault();
+        handler();
+      });
+    });
+    
+    // Asegurar que el texto sea interactivo
+    this.hintButtonText.setInteractive({
+      useHandCursor: true,
+      hitArea: new Phaser.Geom.Rectangle(0, 0, this.hintButtonText.width, this.hintButtonText.height),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains
+    });
 
     // Botón de comprobar usando Phaser
     this.checkButton = this.add
@@ -374,7 +391,7 @@ class DroneRepairScene extends Phaser.Scene {
     });
 
     // Función para manejar el clic en el botón de comprobar
-    const onCheckClick = (pointer) => {
+    const onCheckClick = () => {
       // Efecto visual inmediato
       this.checkButton.setFillStyle(0x16a34a);
       this.checkButtonText.setScale(0.95);
@@ -391,12 +408,29 @@ class DroneRepairScene extends Phaser.Scene {
       this.checkAnswer();
     };
     
-    // Asignar manejadores de eventos
-    this.checkButton.on("pointerdown", (pointer) => onCheckClick(pointer));
-    this.checkButton.on("pointerup", (pointer) => onCheckClick(pointer));
-    this.checkButtonText.setInteractive({ useHandCursor: true })
-      .on("pointerdown", (pointer) => onCheckClick(pointer))
-      .on("pointerup", (pointer) => onCheckClick(pointer));
+    // Asignar manejadores de eventos para el botón de comprobar
+    const checkButtonEvents = {
+      pointerdown: onCheckClick,
+      pointerup: onCheckClick,
+      pointerover: () => this.checkButton.setFillStyle(0x16a34a),
+      pointerout: () => this.checkButton.setFillStyle(0x22c55e)
+    };
+    
+    // Aplicar eventos al botón y al texto
+    Object.entries(checkButtonEvents).forEach(([event, handler]) => {
+      this.checkButton.on(event, handler);
+      this.checkButtonText.on(event, (pointer) => {
+        if (pointer) pointer.event.preventDefault();
+        handler();
+      });
+    });
+    
+    // Asegurar que el texto sea interactivo
+    this.checkButtonText.setInteractive({
+      useHandCursor: true,
+      hitArea: new Phaser.Geom.Rectangle(0, 0, this.checkButtonText.width, this.checkButtonText.height),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains
+    });
   }
 
   setupKeyboard() {
