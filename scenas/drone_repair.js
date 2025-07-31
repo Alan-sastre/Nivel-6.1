@@ -1096,7 +1096,8 @@ class DroneRepairScene extends Phaser.Scene {
     // Crear contenedor de opciones debajo del dron, más a la izquierda
     const optionsContainer = this.add
       .container(this.gameWidth * 0.25, this.gameHeight * 0.75)
-      .setDepth(200);
+      .setDepth(200)
+      .setInteractive(false); // Deshabilitar interacción del contenedor
 
     // Fondo semi-transparente solo para el área de opciones
     const bg = this.add
@@ -1129,7 +1130,7 @@ class DroneRepairScene extends Phaser.Scene {
       // Botón más pequeño pero fácil de tocar
       const button = this.add
         .rectangle(x, y, 60, 40, 0x3b82f6, 0.9) // Botón más pequeño
-        .setInteractive({ useHandCursor: true })
+        .setInteractive({ useHandCursor: true, draggable: false })
         .setDepth(201)
         .setOrigin(0.5)
         .setStrokeStyle(2, 0x60a5fa); // Borde más delgado
@@ -1162,7 +1163,10 @@ class DroneRepairScene extends Phaser.Scene {
       });
 
       // Evento de clic simple
-      button.on("pointerdown", () => {
+      button.on("pointerdown", (event) => {
+        // Prevenir que el evento se propague
+        event.stopPropagation();
+
         console.log("Botón tocado:", option.toString());
 
         if (option.toString() === correctAnswer) {
@@ -1196,6 +1200,11 @@ class DroneRepairScene extends Phaser.Scene {
             buttonText.setText(option.toString());
           });
         }
+      });
+
+      // Agregar también evento pointerup para mejor compatibilidad móvil
+      button.on("pointerup", (event) => {
+        event.stopPropagation();
       });
     });
 
