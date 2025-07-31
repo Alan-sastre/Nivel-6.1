@@ -398,7 +398,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Limpiar input móvil
     if (this.mobileInputContainer) {
-      this.mobileInputContainer.remove();
+      this.mobileInputContainer.destroy();
       this.mobileInputContainer = null;
     }
 
@@ -647,7 +647,7 @@ class DroneRepairScene extends Phaser.Scene {
               this.gameWidth / 2,
               this.gameHeight - 40,
               this.isMobile
-                ? "💡 Aparecerá un teclado para escribir tu respuesta"
+                ? "💡 Aparecerá un teclado numérico para escribir"
                 : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
@@ -948,111 +948,130 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   createMobileInput() {
-    // Crear un input HTML real y visible para móviles
-    const inputContainer = document.createElement("div");
-    inputContainer.style.position = "fixed";
-    inputContainer.style.bottom = "20px";
-    inputContainer.style.left = "50%";
-    inputContainer.style.transform = "translateX(-50%)";
-    inputContainer.style.zIndex = "10000";
-    inputContainer.style.display = "flex";
-    inputContainer.style.flexDirection = "column";
-    inputContainer.style.alignItems = "center";
-    inputContainer.style.gap = "10px";
-    inputContainer.style.backgroundColor = "rgba(0,0,0,0.8)";
-    inputContainer.style.padding = "20px";
-    inputContainer.style.borderRadius = "15px";
-    inputContainer.style.border = "2px solid #007acc";
+    // Crear teclado numérico virtual para móviles
+    const keyboardContainer = this.add.container(
+      this.gameWidth / 2,
+      this.gameHeight - 150
+    );
+
+    // Fondo del teclado
+    const keyboardBg = this.add
+      .graphics()
+      .fillStyle(0x000000, 0.9)
+      .fillRoundedRect(-150, -100, 300, 200, 15)
+      .lineStyle(2, 0x007acc, 1)
+      .strokeRoundedRect(-150, -100, 300, 200, 15)
+      .setDepth(100);
+    keyboardContainer.add(keyboardBg);
 
     // Título
-    const title = document.createElement("div");
-    title.textContent = "Escribe tu respuesta:";
-    title.style.color = "#ffffff";
-    title.style.fontSize = "18px";
-    title.style.fontWeight = "bold";
-    title.style.marginBottom = "10px";
+    const title = this.add
+      .text(0, -80, "Escribe tu respuesta:", {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 2,
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
+    keyboardContainer.add(title);
 
-    // Input
-    const input = document.createElement("input");
-    input.type = "number";
-    input.style.width = "200px";
-    input.style.height = "50px";
-    input.style.fontSize = "24px";
-    input.style.textAlign = "center";
-    input.style.border = "3px solid #007acc";
-    input.style.borderRadius = "10px";
-    input.style.outline = "none";
-    input.style.backgroundColor = "#1e1e1e";
-    input.style.color = "#ffffff";
-    input.style.caretColor = "#ffffff";
-    input.placeholder = "Toca aquí";
-    input.setAttribute("inputmode", "numeric");
-    input.setAttribute("pattern", "[0-9]*");
+    // Display del número
+    const displayBg = this.add
+      .graphics()
+      .fillStyle(0x1e1e1e, 1)
+      .fillRoundedRect(-120, -50, 240, 30, 5)
+      .lineStyle(1, 0x007acc, 1)
+      .strokeRoundedRect(-120, -50, 240, 30, 5)
+      .setDepth(101);
+    keyboardContainer.add(displayBg);
 
-    // Botón enviar
-    const sendButton = document.createElement("button");
-    sendButton.textContent = "Enviar";
-    sendButton.style.padding = "12px 30px";
-    sendButton.style.fontSize = "16px";
-    sendButton.style.backgroundColor = "#22c55e";
-    sendButton.style.color = "#ffffff";
-    sendButton.style.border = "none";
-    sendButton.style.borderRadius = "8px";
-    sendButton.style.cursor = "pointer";
+    this.mobileDisplay = this.add
+      .text(0, -35, "", {
+        fontFamily: "Arial",
+        fontSize: "20px",
+        color: "#ffffff",
+      })
+      .setOrigin(0.5)
+      .setDepth(102);
+    keyboardContainer.add(this.mobileDisplay);
 
-    // Botón cerrar
-    const closeButton = document.createElement("button");
-    closeButton.textContent = "✕";
-    closeButton.style.position = "absolute";
-    closeButton.style.top = "10px";
-    closeButton.style.right = "10px";
-    closeButton.style.width = "30px";
-    closeButton.style.height = "30px";
-    closeButton.style.backgroundColor = "#ef4444";
-    closeButton.style.color = "#ffffff";
-    closeButton.style.border = "none";
-    closeButton.style.borderRadius = "50%";
-    closeButton.style.cursor = "pointer";
-    closeButton.style.fontSize = "16px";
+    // Teclado numérico
+    const numbers = [
+      ["1", "2", "3"],
+      ["4", "5", "6"],
+      ["7", "8", "9"],
+      ["0", "⌫", "✓"],
+    ];
 
-    // Agregar elementos al contenedor
-    inputContainer.appendChild(closeButton);
-    inputContainer.appendChild(title);
-    inputContainer.appendChild(input);
-    inputContainer.appendChild(sendButton);
+    numbers.forEach((row, rowIndex) => {
+      row.forEach((num, colIndex) => {
+        const x = (colIndex - 1) * 60;
+        const y = rowIndex * 45 - 10;
 
-    // Agregar al DOM
-    document.body.appendChild(inputContainer);
+        let buttonColor = 0x007acc;
+        let textColor = "#ffffff";
 
-    // Enfocar el input automáticamente
-    setTimeout(() => {
-      input.focus();
-      input.click();
-    }, 100);
+        if (num === "⌫") {
+          buttonColor = 0xf59e0b;
+        } else if (num === "✓") {
+          buttonColor = 0x22c55e;
+        }
 
-    // Eventos
-    const handleSubmit = () => {
-      this.inputText = input.value;
-      this.updateInputDisplay();
-      document.body.removeChild(inputContainer);
-      this.checkAnswer();
-    };
+        const button = this.add
+          .rectangle(x, y, 50, 35, buttonColor, 0.8)
+          .setInteractive({ useHandCursor: true })
+          .setDepth(101);
 
-    const handleClose = () => {
-      document.body.removeChild(inputContainer);
-    };
+        const buttonText = this.add
+          .text(x, y, num, {
+            fontFamily: "Arial",
+            fontSize: "18px",
+            color: textColor,
+            stroke: "#000000",
+            strokeThickness: 2,
+          })
+          .setOrigin(0.5)
+          .setDepth(102);
 
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        handleSubmit();
-      }
+        keyboardContainer.add(button);
+        keyboardContainer.add(buttonText);
+
+        // Eventos del botón
+        button.on("pointerover", () => {
+          button.setFillStyle(
+            buttonColor === 0x007acc ? 0x0056b3 : buttonColor
+          );
+          buttonText.setScale(1.1);
+        });
+
+        button.on("pointerout", () => {
+          button.setFillStyle(buttonColor, 0.8);
+          buttonText.setScale(1);
+        });
+
+        button.on("pointerdown", () => {
+          if (num === "⌫") {
+            // Borrar último dígito
+            this.inputText = this.inputText.slice(0, -1);
+          } else if (num === "✓") {
+            // Enviar respuesta
+            keyboardContainer.destroy();
+            this.checkAnswer();
+            return;
+          } else {
+            // Agregar número
+            this.inputText += num;
+          }
+
+          this.mobileDisplay.setText(this.inputText);
+        });
+      });
     });
 
-    sendButton.addEventListener("click", handleSubmit);
-    closeButton.addEventListener("click", handleClose);
-
     // Guardar referencia
-    this.mobileInputContainer = inputContainer;
+    this.mobileInputContainer = keyboardContainer;
   }
 
   createHiddenInput() {
@@ -1234,7 +1253,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Limpiar input móvil
     if (this.mobileInputContainer) {
-      this.mobileInputContainer.remove();
+      this.mobileInputContainer.destroy();
       this.mobileInputContainer = null;
     }
 
