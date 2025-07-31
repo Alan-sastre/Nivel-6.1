@@ -396,10 +396,10 @@ class DroneRepairScene extends Phaser.Scene {
       this.htmlInput = null;
     }
 
-    // Limpiar opciones móviles
-    if (this.mobileOptionsContainer) {
-      this.mobileOptionsContainer.destroy();
-      this.mobileOptionsContainer = null;
+    // Limpiar input móvil
+    if (this.mobileInputContainer) {
+      this.mobileInputContainer.remove();
+      this.mobileInputContainer = null;
     }
 
     // Limpiar título anterior
@@ -647,7 +647,7 @@ class DroneRepairScene extends Phaser.Scene {
               this.gameWidth / 2,
               this.gameHeight - 40,
               this.isMobile
-                ? "💡 Selecciona tu respuesta de las opciones"
+                ? "💡 Aparecerá un teclado para escribir tu respuesta"
                 : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
@@ -672,10 +672,10 @@ class DroneRepairScene extends Phaser.Scene {
             });
           });
 
-          // En móviles, mostrar opciones de respuesta en lugar del teclado
+          // En móviles, crear input HTML visible que funcione
           if (this.isMobile) {
             this.time.delayedCall(1000, () => {
-              this.showMobileOptions();
+              this.createMobileInput();
             });
           }
         }
@@ -947,121 +947,112 @@ class DroneRepairScene extends Phaser.Scene {
     }
   }
 
-  showMobileOptions() {
-    // Crear opciones de respuesta para móviles
-    const correctAnswer = this.currentExercise.correctValue;
-
-    // Generar opciones incorrectas
-    let options = [correctAnswer];
-    const correctNum = parseInt(correctAnswer);
-
-    // Agregar opciones incorrectas
-    options.push(correctNum + 500);
-    options.push(correctNum - 500);
-    options.push(correctNum + 1000);
-    options.push(correctNum - 1000);
-
-    // Mezclar las opciones
-    options = options.sort(() => Math.random() - 0.5);
-
-    // Crear contenedor de opciones
-    const optionsContainer = this.add.container(
-      this.gameWidth / 2,
-      this.gameHeight - 120
-    );
+  createMobileInput() {
+    // Crear un input HTML real y visible para móviles
+    const inputContainer = document.createElement("div");
+    inputContainer.style.position = "fixed";
+    inputContainer.style.bottom = "20px";
+    inputContainer.style.left = "50%";
+    inputContainer.style.transform = "translateX(-50%)";
+    inputContainer.style.zIndex = "10000";
+    inputContainer.style.display = "flex";
+    inputContainer.style.flexDirection = "column";
+    inputContainer.style.alignItems = "center";
+    inputContainer.style.gap = "10px";
+    inputContainer.style.backgroundColor = "rgba(0,0,0,0.8)";
+    inputContainer.style.padding = "20px";
+    inputContainer.style.borderRadius = "15px";
+    inputContainer.style.border = "2px solid #007acc";
 
     // Título
-    const title = this.add
-      .text(0, -60, "Selecciona tu respuesta:", {
-        fontFamily: "Arial",
-        fontSize: "20px",
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 3,
-      })
-      .setOrigin(0.5);
-    optionsContainer.add(title);
+    const title = document.createElement("div");
+    title.textContent = "Escribe tu respuesta:";
+    title.style.color = "#ffffff";
+    title.style.fontSize = "18px";
+    title.style.fontWeight = "bold";
+    title.style.marginBottom = "10px";
 
-    // Crear botones de opciones
-    options.forEach((option, index) => {
-      const button = this.add
-        .rectangle(0, index * 50, 200, 40, 0x007acc, 0.8)
-        .setInteractive({ useHandCursor: true })
-        .setDepth(100);
+    // Input
+    const input = document.createElement("input");
+    input.type = "number";
+    input.style.width = "200px";
+    input.style.height = "50px";
+    input.style.fontSize = "24px";
+    input.style.textAlign = "center";
+    input.style.border = "3px solid #007acc";
+    input.style.borderRadius = "10px";
+    input.style.outline = "none";
+    input.style.backgroundColor = "#1e1e1e";
+    input.style.color = "#ffffff";
+    input.style.caretColor = "#ffffff";
+    input.placeholder = "Toca aquí";
+    input.setAttribute("inputmode", "numeric");
+    input.setAttribute("pattern", "[0-9]*");
 
-      const buttonText = this.add
-        .text(0, index * 50, option.toString(), {
-          fontFamily: "Arial",
-          fontSize: "18px",
-          color: "#ffffff",
-          stroke: "#000000",
-          strokeThickness: 2,
-        })
-        .setOrigin(0.5)
-        .setDepth(101);
+    // Botón enviar
+    const sendButton = document.createElement("button");
+    sendButton.textContent = "Enviar";
+    sendButton.style.padding = "12px 30px";
+    sendButton.style.fontSize = "16px";
+    sendButton.style.backgroundColor = "#22c55e";
+    sendButton.style.color = "#ffffff";
+    sendButton.style.border = "none";
+    sendButton.style.borderRadius = "8px";
+    sendButton.style.cursor = "pointer";
 
-      optionsContainer.add(button);
-      optionsContainer.add(buttonText);
+    // Botón cerrar
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "✕";
+    closeButton.style.position = "absolute";
+    closeButton.style.top = "10px";
+    closeButton.style.right = "10px";
+    closeButton.style.width = "30px";
+    closeButton.style.height = "30px";
+    closeButton.style.backgroundColor = "#ef4444";
+    closeButton.style.color = "#ffffff";
+    closeButton.style.border = "none";
+    closeButton.style.borderRadius = "50%";
+    closeButton.style.cursor = "pointer";
+    closeButton.style.fontSize = "16px";
 
-      // Eventos del botón
-      button.on("pointerover", () => {
-        button.setFillStyle(0x0056b3);
-        buttonText.setScale(1.05);
-      });
+    // Agregar elementos al contenedor
+    inputContainer.appendChild(closeButton);
+    inputContainer.appendChild(title);
+    inputContainer.appendChild(input);
+    inputContainer.appendChild(sendButton);
 
-      button.on("pointerout", () => {
-        button.setFillStyle(0x007acc, 0.8);
-        buttonText.setScale(1);
-      });
+    // Agregar al DOM
+    document.body.appendChild(inputContainer);
 
-      button.on("pointerdown", () => {
-        // Verificar si es la respuesta correcta
-        if (option.toString() === correctAnswer) {
-          // Respuesta correcta
-          button.setFillStyle(0x22c55e);
-          buttonText.setText("✅ " + option.toString());
+    // Enfocar el input automáticamente
+    setTimeout(() => {
+      input.focus();
+      input.click();
+    }, 100);
 
-          // Efecto de éxito
-          this.tweens.add({
-            targets: [button, buttonText],
-            scaleX: 1.1,
-            scaleY: 1.1,
-            duration: 200,
-            yoyo: true,
-            repeat: 1,
-          });
+    // Eventos
+    const handleSubmit = () => {
+      this.inputText = input.value;
+      this.updateInputDisplay();
+      document.body.removeChild(inputContainer);
+      this.checkAnswer();
+    };
 
-          // Pasar al siguiente ejercicio después de 1 segundo
-          this.time.delayedCall(1000, () => {
-            optionsContainer.destroy();
-            this.checkAnswer();
-          });
-        } else {
-          // Respuesta incorrecta
-          button.setFillStyle(0xef4444);
-          buttonText.setText("❌ " + option.toString());
+    const handleClose = () => {
+      document.body.removeChild(inputContainer);
+    };
 
-          // Efecto de error
-          this.tweens.add({
-            targets: [button, buttonText],
-            x: button.x - 5,
-            duration: 100,
-            yoyo: true,
-            repeat: 2,
-          });
-
-          // Restaurar después de 1 segundo
-          this.time.delayedCall(1000, () => {
-            button.setFillStyle(0x007acc, 0.8);
-            buttonText.setText(option.toString());
-            buttonText.setScale(1);
-          });
-        }
-      });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleSubmit();
+      }
     });
 
-    // Guardar referencia para limpiar
-    this.mobileOptionsContainer = optionsContainer;
+    sendButton.addEventListener("click", handleSubmit);
+    closeButton.addEventListener("click", handleClose);
+
+    // Guardar referencia
+    this.mobileInputContainer = inputContainer;
   }
 
   createHiddenInput() {
@@ -1241,10 +1232,10 @@ class DroneRepairScene extends Phaser.Scene {
       this.hiddenInput = null;
     }
 
-    // Limpiar opciones móviles
-    if (this.mobileOptionsContainer) {
-      this.mobileOptionsContainer.destroy();
-      this.mobileOptionsContainer = null;
+    // Limpiar input móvil
+    if (this.mobileInputContainer) {
+      this.mobileInputContainer.remove();
+      this.mobileInputContainer = null;
     }
 
     // Limpiar el teclado
