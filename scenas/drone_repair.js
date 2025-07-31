@@ -541,22 +541,22 @@ class DroneRepairScene extends Phaser.Scene {
               .setInteractive({ useHandCursor: true })
               .setDepth(10);
 
-            // Texto indicativo más descriptivo
-            const placeholderText = this.add
-              .text(
-                this.editorX + 60 + inputX + 40,
-                this.editorY + 20 + y + 10,
-                "Toca para opciones",
-                {
-                  fontFamily: "Consolas, monospace",
-                  fontSize: "12px",
-                  color: "#ffffff",
-                  stroke: "#000000",
-                  strokeThickness: 1,
-                }
-              )
-              .setOrigin(0.5)
-              .setDepth(11);
+            // No mostrar texto en el input para móviles
+            // const placeholderText = this.add
+            //   .text(
+            //     this.editorX + 60 + inputX + 40,
+            //     this.editorY + 20 + y + 10,
+            //     "Toca para opciones",
+            //     {
+            //       fontFamily: "Consolas, monospace",
+            //       fontSize: "12px",
+            //       color: "#ffffff",
+            //       stroke: "#000000",
+            //       strokeThickness: 1,
+            //     }
+            //   )
+            //   .setOrigin(0.5)
+            //   .setDepth(11);
 
             // Al tocar el área, mostrar las opciones
             inputArea.on("pointerdown", () => {
@@ -1145,44 +1145,33 @@ class DroneRepairScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setDepth(202);
 
-      // Hacer el texto también interactivo para mejor respuesta en móviles
-      buttonText.setInteractive({ useHandCursor: true });
-
       optionsContainer.add(button);
       optionsContainer.add(buttonText);
 
-      // Función para manejar la respuesta
-      const handleAnswer = () => {
-        console.log(
-          "Botón tocado:",
-          option.toString(),
-          "Respuesta correcta:",
-          correctAnswer
-        );
+      // Eventos del botón
+      button.on("pointerover", () => {
+        button.setFillStyle(0x2563eb);
+        button.setScale(1.05);
+        buttonText.setScale(1.05);
+      });
 
-        // Verificar si es la respuesta correcta
+      button.on("pointerout", () => {
+        button.setFillStyle(0x3b82f6, 0.9);
+        button.setScale(1);
+        buttonText.setScale(1);
+      });
+
+      // Evento de clic simple
+      button.on("pointerdown", () => {
+        console.log("Botón tocado:", option.toString());
+
         if (option.toString() === correctAnswer) {
-          console.log("¡Respuesta correcta!");
-
-          // Respuesta correcta - efecto más llamativo
-          button.setFillStyle(0x22c55e); // Verde
+          console.log("¡Correcto!");
+          button.setFillStyle(0x22c55e);
           buttonText.setText("✅ " + option.toString());
 
-          // Efecto de éxito mejorado
-          this.tweens.add({
-            targets: [button, buttonText],
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 300,
-            yoyo: true,
-            repeat: 1,
-            ease: "Bounce.Out",
-          });
-
-          // Mostrar mensaje de éxito
           this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
 
-          // Pasar al siguiente ejercicio después de 1.5 segundos
           this.time.delayedCall(1500, () => {
             if (optionsContainer) {
               optionsContainer.destroy();
@@ -1191,23 +1180,10 @@ class DroneRepairScene extends Phaser.Scene {
             this.checkAnswer();
           });
         } else {
-          console.log("Respuesta incorrecta");
-
-          // Respuesta incorrecta - efecto mejorado
-          button.setFillStyle(0xef4444); // Rojo
+          console.log("Incorrecto");
+          button.setFillStyle(0xef4444);
           buttonText.setText("❌ " + option.toString());
 
-          // Efecto de error mejorado
-          this.tweens.add({
-            targets: [button, buttonText],
-            x: button.x - 8,
-            duration: 80,
-            yoyo: true,
-            repeat: 3,
-            ease: "Sine.easeInOut",
-          });
-
-          // Mostrar mensaje de error
           this.showMessage(
             "Incorrecto. Inténtalo de nuevo.",
             "#f87171",
@@ -1215,36 +1191,12 @@ class DroneRepairScene extends Phaser.Scene {
             1000
           );
 
-          // Restaurar después de 1 segundo
           this.time.delayedCall(1000, () => {
             button.setFillStyle(0x3b82f6, 0.9);
             buttonText.setText(option.toString());
-            button.setScale(1);
-            buttonText.setScale(1);
           });
         }
-      };
-
-      // Eventos del botón con mejores efectos
-      button.on("pointerover", () => {
-        button.setFillStyle(0x2563eb); // Azul más oscuro al pasar el mouse
-        button.setScale(1.05);
-        buttonText.setScale(1.05);
       });
-
-      button.on("pointerout", () => {
-        button.setFillStyle(0x3b82f6, 0.9); // Volver al color original
-        button.setScale(1);
-        buttonText.setScale(1);
-      });
-
-      // Eventos del botón
-      button.on("pointerdown", handleAnswer);
-      button.on("pointerup", handleAnswer);
-
-      // Eventos del texto también
-      buttonText.on("pointerdown", handleAnswer);
-      buttonText.on("pointerup", handleAnswer);
     });
 
     // Agregar mensaje de ayuda (solo si se presiona el botón de pista)
