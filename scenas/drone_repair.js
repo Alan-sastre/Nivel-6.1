@@ -262,18 +262,13 @@ class DroneRepairScene extends Phaser.Scene {
 
       // Prueba directa - crear mensaje inmediatamente
       const testMessage = this.add
-        .text(
-          this.gameWidth / 2,
-          this.gameHeight - 100,
-          "PRUEBA: Pista funcionando!",
-          {
-            fontFamily: "Arial",
-            fontSize: "24px",
-            color: "#ff0000",
-            stroke: "#ffffff",
-            strokeThickness: 3,
-          }
-        )
+        .text(this.gameWidth / 2, this.gameHeight - 100, {
+          fontFamily: "Arial",
+          fontSize: "24px",
+          color: "#ff0000",
+          stroke: "#ffffff",
+          strokeThickness: 3,
+        })
         .setOrigin(0.5)
         .setDepth(200);
 
@@ -641,7 +636,7 @@ class DroneRepairScene extends Phaser.Scene {
               this.gameWidth / 2,
               this.gameHeight - 40,
               this.isMobile
-                ? "💡 Toca el botón ⌨️ para abrir el teclado"
+                ? "💡 El teclado se abrirá automáticamente"
                 : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
@@ -665,6 +660,13 @@ class DroneRepairScene extends Phaser.Scene {
               },
             });
           });
+
+          // En móviles, abrir automáticamente el teclado después de un breve delay
+          if (this.isMobile) {
+            this.time.delayedCall(1000, () => {
+              this.showMobileInputModal();
+            });
+          }
         }
       } else {
         // Línea normal de código estilo VS Code
@@ -944,8 +946,15 @@ class DroneRepairScene extends Phaser.Scene {
     modal.style.alignItems = "center";
     modal.style.flexDirection = "column";
 
+    const title = document.createElement("div");
+    title.textContent = "Escribe tu respuesta:";
+    title.style.color = "#ffffff";
+    title.style.fontSize = "20px";
+    title.style.marginBottom = "20px";
+    title.style.textAlign = "center";
+
     const input = document.createElement("input");
-    input.type = "number";
+    input.type = "tel"; // Cambiar a tel para mejor compatibilidad móvil
     input.style.width = "200px";
     input.style.height = "50px";
     input.style.fontSize = "24px";
@@ -955,7 +964,10 @@ class DroneRepairScene extends Phaser.Scene {
     input.style.outline = "none";
     input.style.backgroundColor = "#1e1e1e";
     input.style.color = "#ffffff";
-    input.placeholder = "Escribe tu respuesta";
+    input.placeholder = "Toca aquí para escribir";
+    input.style.caretColor = "#ffffff";
+    input.setAttribute("inputmode", "numeric");
+    input.setAttribute("pattern", "[0-9]*");
 
     const button = document.createElement("button");
     button.textContent = "Enviar";
@@ -983,15 +995,24 @@ class DroneRepairScene extends Phaser.Scene {
     closeButton.style.cursor = "pointer";
 
     modal.appendChild(closeButton);
+    modal.appendChild(title);
     modal.appendChild(input);
     modal.appendChild(button);
 
     document.body.appendChild(modal);
 
-    // Enfocar el input automáticamente
+    // Enfocar el input automáticamente de forma más agresiva
     setTimeout(() => {
       input.focus();
+      input.click();
+      input.select();
     }, 100);
+
+    // Intentar enfocar nuevamente después de un delay más largo
+    setTimeout(() => {
+      input.focus();
+      input.click();
+    }, 500);
 
     // Eventos
     const handleSubmit = () => {
@@ -1009,6 +1030,16 @@ class DroneRepairScene extends Phaser.Scene {
       if (e.key === "Enter") {
         handleSubmit();
       }
+    });
+
+    // Evento adicional para asegurar que el teclado se abra
+    input.addEventListener("touchstart", () => {
+      input.focus();
+    });
+
+    input.addEventListener("click", () => {
+      input.focus();
+      input.select();
     });
 
     button.addEventListener("click", handleSubmit);
