@@ -1432,7 +1432,6 @@ class DroneRepairScene extends Phaser.Scene {
     console.log("createHiddenInput() está obsoleto, usando createMobileInput() en su lugar");
     return;
   }
-  }
 
   // Esta función ya no se usa, pero se mantiene por compatibilidad
   showMobileInputModal() {
@@ -1442,9 +1441,6 @@ class DroneRepairScene extends Phaser.Scene {
     // Llamar directamente a createMobileInput para mostrar las opciones
     this.createMobileInput();
     return;
-  }
-
-  // No hay más código aquí, la función termina arriba
   }
 
   createMobileOptionsButton() {
