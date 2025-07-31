@@ -22,6 +22,20 @@
             padding: 0px;
             overflow: hidden;
             background-image: url('roblogo.png');
+            /* Prevenir selección de texto en móviles */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* Prevenir zoom en iOS */
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            /* Prevenir arrastrar elementos */
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
         }
 
         #turn {
@@ -45,6 +59,28 @@
             z-index: 1000;
             text-align: center;
             padding: 20px;
+        }
+
+        /* Estilos para el canvas del juego */
+        canvas {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            border: none;
+        }
+
+        /* Prevenir selección en todos los elementos */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Estilos personalizados para SweetAlert2 */

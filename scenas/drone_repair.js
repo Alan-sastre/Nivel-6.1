@@ -291,36 +291,49 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Eventos del botón pista
     this.hintButton.on("pointerover", () => {
-      this.hintButton.setFillStyle(0xf59e0b);
-      this.hintButtonText.setScale(1.05);
+      if (!this.isMobile) {
+        this.hintButton.setFillStyle(0xf59e0b);
+        this.hintButtonText.setScale(1.05);
+      }
     });
 
     this.hintButton.on("pointerout", () => {
-      this.hintButton.setFillStyle(0xfbbf24);
-      this.hintButtonText.setScale(1);
+      if (!this.isMobile) {
+        this.hintButton.setFillStyle(0xfbbf24);
+        this.hintButtonText.setScale(1);
+      }
     });
 
-    this.hintButton.on("pointerdown", () => {
+    this.hintButton.on("pointerdown", (pointer, localX, localY, event) => {
+      // Prevenir comportamientos por defecto en móviles
+      if (event && event.preventDefault) {
+        event.preventDefault();
+      }
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      
+      // Efecto visual inmediato
+      this.hintButton.setFillStyle(0xf59e0b);
+      this.hintButtonText.setScale(0.95);
+    });
+
+    this.hintButton.on("pointerup", (pointer, localX, localY, event) => {
+      // Prevenir comportamientos por defecto en móviles
+      if (event && event.preventDefault) {
+        event.preventDefault();
+      }
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      
       console.log("Botón Pista clickeado!");
-
-      // Prueba directa - crear mensaje inmediatamente
-      const testMessage = this.add
-        .text(this.gameWidth / 2, this.gameHeight - 100, "Mensaje de prueba", {
-          fontFamily: "Arial",
-          fontSize: "24px",
-          color: "#ff0000",
-          stroke: "#ffffff",
-          strokeThickness: 3,
-        })
-        .setOrigin(0.5)
-        .setDepth(200);
-
-      // Destruir mensaje de prueba después de 2 segundos
-      this.time.delayedCall(2000, () => {
-        testMessage.destroy();
-      });
-
-      // También llamar a la función original
+      
+      // Restaurar apariencia
+      this.hintButton.setFillStyle(0xfbbf24);
+      this.hintButtonText.setScale(1);
+      
+      // Ejecutar acción
       this.showHint();
     });
 
@@ -355,17 +368,49 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Eventos del botón comprobar
     this.checkButton.on("pointerover", () => {
-      this.checkButton.setFillStyle(0x16a34a);
-      this.checkButtonText.setScale(1.05);
+      if (!this.isMobile) {
+        this.checkButton.setFillStyle(0x16a34a);
+        this.checkButtonText.setScale(1.05);
+      }
     });
 
     this.checkButton.on("pointerout", () => {
-      this.checkButton.setFillStyle(0x22c55e);
-      this.checkButtonText.setScale(1);
+      if (!this.isMobile) {
+        this.checkButton.setFillStyle(0x22c55e);
+        this.checkButtonText.setScale(1);
+      }
     });
 
-    this.checkButton.on("pointerdown", () => {
+    this.checkButton.on("pointerdown", (pointer, localX, localY, event) => {
+      // Prevenir comportamientos por defecto en móviles
+      if (event && event.preventDefault) {
+        event.preventDefault();
+      }
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      
+      // Efecto visual inmediato
+      this.checkButton.setFillStyle(0x16a34a);
+      this.checkButtonText.setScale(0.95);
+    });
+
+    this.checkButton.on("pointerup", (pointer, localX, localY, event) => {
+      // Prevenir comportamientos por defecto en móviles
+      if (event && event.preventDefault) {
+        event.preventDefault();
+      }
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      
       console.log("Botón Comprobar clickeado!");
+      
+      // Restaurar apariencia
+      this.checkButton.setFillStyle(0x22c55e);
+      this.checkButtonText.setScale(1);
+      
+      // Ejecutar acción
       this.checkAnswer();
     });
   }
@@ -1171,14 +1216,48 @@ class DroneRepairScene extends Phaser.Scene {
         }
       };
 
-      // Múltiples eventos para asegurar que funcione
-      button.on("pointerdown", handleAnswer);
-      button.on("pointerup", handleAnswer);
-      button.on("pointerover", () => {
-        button.setFillStyle(0x2563eb);
+      // Eventos optimizados para móviles
+      button.on("pointerdown", (pointer, localX, localY, event) => {
+        // Prevenir comportamientos por defecto
+        if (event && event.preventDefault) {
+          event.preventDefault();
+        }
+        if (event && event.stopPropagation) {
+          event.stopPropagation();
+        }
+        
+        // Efecto visual inmediato
+        button.setFillStyle(0x1d4ed8);
+        buttonText.setScale(0.95);
       });
-      button.on("pointerout", () => {
+      
+      button.on("pointerup", (pointer, localX, localY, event) => {
+        // Prevenir comportamientos por defecto
+        if (event && event.preventDefault) {
+          event.preventDefault();
+        }
+        if (event && event.stopPropagation) {
+          event.stopPropagation();
+        }
+        
+        // Restaurar apariencia
         button.setFillStyle(0x3b82f6);
+        buttonText.setScale(1);
+        
+        // Ejecutar acción
+        handleAnswer();
+      });
+      
+      button.on("pointerover", () => {
+        if (!this.isMobile) {
+          button.setFillStyle(0x2563eb);
+        }
+      });
+      
+      button.on("pointerout", () => {
+        if (!this.isMobile) {
+          button.setFillStyle(0x3b82f6);
+        }
       });
     });
 
