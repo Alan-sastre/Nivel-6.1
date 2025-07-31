@@ -130,9 +130,6 @@ class DroneRepairScene extends Phaser.Scene {
 
     // En móviles, mostrar directamente las opciones de respuesta
     if (this.isMobile) {
-      // Crear el botón de opciones inmediatamente
-      this.createMobileOptionsButton();
-
       // Mostrar mensaje de ayuda para móviles con texto más grande
       this.time.delayedCall(500, () => {
         const helpText = this.add
@@ -1098,7 +1095,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Crear contenedor de opciones debajo del dron, más a la izquierda
     const optionsContainer = this.add
-      .container(this.gameWidth * 0.35, this.gameHeight * 0.75)
+      .container(this.gameWidth * 0.25, this.gameHeight * 0.75)
       .setDepth(200);
 
     // Fondo semi-transparente solo para el área de opciones
@@ -1148,23 +1145,14 @@ class DroneRepairScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setDepth(202);
 
+      // Hacer el texto también interactivo para mejor respuesta en móviles
+      buttonText.setInteractive({ useHandCursor: true });
+
       optionsContainer.add(button);
       optionsContainer.add(buttonText);
 
-      // Eventos del botón con mejores efectos
-      button.on("pointerover", () => {
-        button.setFillStyle(0x2563eb); // Azul más oscuro al pasar el mouse
-        button.setScale(1.05);
-        buttonText.setScale(1.05);
-      });
-
-      button.on("pointerout", () => {
-        button.setFillStyle(0x3b82f6, 0.9); // Volver al color original
-        button.setScale(1);
-        buttonText.setScale(1);
-      });
-
-      button.on("pointerdown", () => {
+      // Función para manejar la respuesta
+      const handleAnswer = () => {
         console.log(
           "Botón tocado:",
           option.toString(),
@@ -1235,7 +1223,28 @@ class DroneRepairScene extends Phaser.Scene {
             buttonText.setScale(1);
           });
         }
+      };
+
+      // Eventos del botón con mejores efectos
+      button.on("pointerover", () => {
+        button.setFillStyle(0x2563eb); // Azul más oscuro al pasar el mouse
+        button.setScale(1.05);
+        buttonText.setScale(1.05);
       });
+
+      button.on("pointerout", () => {
+        button.setFillStyle(0x3b82f6, 0.9); // Volver al color original
+        button.setScale(1);
+        buttonText.setScale(1);
+      });
+
+      // Eventos del botón
+      button.on("pointerdown", handleAnswer);
+      button.on("pointerup", handleAnswer);
+
+      // Eventos del texto también
+      buttonText.on("pointerdown", handleAnswer);
+      buttonText.on("pointerup", handleAnswer);
     });
 
     // Agregar mensaje de ayuda (solo si se presiona el botón de pista)
@@ -1293,95 +1302,9 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   createMobileOptionsButton() {
-    // Crear un botón flotante grande y visible para mostrar las opciones de respuesta
-    const buttonSize = 80; // Aumentado para mejor visibilidad
-    const padding = 15; // Mayor separación del borde
-
-    // Contenedor del botón (para efectos y animaciones)
-    this.optionsButtonContainer = this.add
-      .container(
-        this.gameWidth - buttonSize / 2 - padding,
-        this.gameHeight - buttonSize / 2 - padding
-      )
-      .setDepth(150);
-
-    // Fondo del botón con efecto de brillo
-    const buttonBg = this.add
-      .graphics()
-      .fillStyle(0x007acc, 1)
-      .fillCircle(0, 0, buttonSize / 2)
-      .lineStyle(4, 0x00a8ff, 1) // Borde más grueso
-      .strokeCircle(0, 0, buttonSize / 2);
-
-    // Texto del botón
-    const buttonText = this.add
-      .text(0, 0, "?", {
-        fontFamily: "Arial",
-        fontSize: "42px", // Texto más grande
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 3, // Contorno más grueso
-      })
-      .setOrigin(0.5);
-
-    // Añadir al contenedor
-    this.optionsButtonContainer.add(buttonBg);
-    this.optionsButtonContainer.add(buttonText);
-
-    // Hacer el botón interactivo
-    buttonBg.setInteractive(
-      new Phaser.Geom.Circle(0, 0, buttonSize / 2),
-      Phaser.Geom.Circle.Contains
-    );
-
-    // Efectos al interactuar
-    buttonBg.on("pointerover", () => {
-      buttonBg
-        .clear()
-        .fillStyle(0x0056b3, 1)
-        .fillCircle(0, 0, buttonSize / 2)
-        .lineStyle(3, 0x00a8ff, 1)
-        .strokeCircle(0, 0, buttonSize / 2);
-      buttonText.setScale(1.1);
-    });
-
-    buttonBg.on("pointerout", () => {
-      buttonBg
-        .clear()
-        .fillStyle(0x007acc, 1)
-        .fillCircle(0, 0, buttonSize / 2)
-        .lineStyle(3, 0x00a8ff, 1)
-        .strokeCircle(0, 0, buttonSize / 2);
-      buttonText.setScale(1);
-    });
-
-    // Al hacer clic, mostrar las opciones de respuesta
-    buttonBg.on("pointerdown", () => {
-      // Efecto de pulsación
-      this.tweens.add({
-        targets: this.optionsButtonContainer,
-        scale: 0.9,
-        duration: 100,
-        yoyo: true,
-        onComplete: () => {
-          // Mostrar las opciones de respuesta
-          this.createMobileInput();
-        },
-      });
-    });
-
-    // Añadir una animación sutil para llamar la atención
-    this.tweens.add({
-      targets: this.optionsButtonContainer,
-      scale: 1.1,
-      duration: 800,
-      yoyo: true,
-      repeat: 2,
-      ease: "Sine.easeInOut",
-    });
-
-    // Guardar referencia para poder destruirlo después
-    this.optionsButton = buttonBg;
+    // Esta función ya no se usa, las opciones se muestran automáticamente
+    console.log("createMobileOptionsButton - función obsoleta");
+    return;
   }
 
   shutdown() {
