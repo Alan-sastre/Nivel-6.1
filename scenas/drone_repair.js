@@ -647,7 +647,7 @@ class DroneRepairScene extends Phaser.Scene {
               this.gameWidth / 2,
               this.gameHeight - 40,
               this.isMobile
-                ? "💡 Aparecerá un teclado numérico para escribir"
+                ? "💡 Selecciona tu respuesta de las opciones"
                 : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
@@ -948,130 +948,139 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   createMobileInput() {
-    // Crear teclado numérico virtual para móviles
-    const keyboardContainer = this.add.container(
+    // Crear opciones de respuesta para móviles
+    const correctAnswer = this.currentExercise.correctValue;
+
+    // Generar opciones incorrectas
+    let options = [correctAnswer];
+    const correctNum = parseInt(correctAnswer);
+
+    // Agregar opciones incorrectas cercanas
+    options.push(correctNum + 500);
+    options.push(correctNum - 500);
+    options.push(correctNum + 1000);
+    options.push(correctNum - 1000);
+    options.push(correctNum + 200);
+    options.push(correctNum - 200);
+
+    // Mezclar las opciones
+    options = options.sort(() => Math.random() - 0.5);
+
+    // Crear contenedor de opciones
+    const optionsContainer = this.add.container(
       this.gameWidth / 2,
-      this.gameHeight - 150
+      this.gameHeight - 120
     );
 
-    // Fondo del teclado
-    const keyboardBg = this.add
+    // Fondo del contenedor
+    const bg = this.add
       .graphics()
       .fillStyle(0x000000, 0.9)
-      .fillRoundedRect(-150, -100, 300, 200, 15)
+      .fillRoundedRect(-200, -80, 400, 160, 15)
       .lineStyle(2, 0x007acc, 1)
-      .strokeRoundedRect(-150, -100, 300, 200, 15)
+      .strokeRoundedRect(-200, -80, 400, 160, 15)
       .setDepth(100);
-    keyboardContainer.add(keyboardBg);
+    optionsContainer.add(bg);
 
     // Título
     const title = this.add
-      .text(0, -80, "Escribe tu respuesta:", {
+      .text(0, -60, "Selecciona tu respuesta:", {
         fontFamily: "Arial",
-        fontSize: "16px",
+        fontSize: "18px",
         color: "#ffffff",
         stroke: "#000000",
-        strokeThickness: 2,
+        strokeThickness: 3,
       })
       .setOrigin(0.5)
       .setDepth(101);
-    keyboardContainer.add(title);
+    optionsContainer.add(title);
 
-    // Display del número
-    const displayBg = this.add
-      .graphics()
-      .fillStyle(0x1e1e1e, 1)
-      .fillRoundedRect(-120, -50, 240, 30, 5)
-      .lineStyle(1, 0x007acc, 1)
-      .strokeRoundedRect(-120, -50, 240, 30, 5)
-      .setDepth(101);
-    keyboardContainer.add(displayBg);
+    // Crear botones de opciones (2 filas de 3)
+    options.slice(0, 6).forEach((option, index) => {
+      const row = Math.floor(index / 3);
+      const col = index % 3;
+      const x = (col - 1) * 100;
+      const y = row * 50 - 10;
 
-    this.mobileDisplay = this.add
-      .text(0, -35, "", {
-        fontFamily: "Arial",
-        fontSize: "20px",
-        color: "#ffffff",
-      })
-      .setOrigin(0.5)
-      .setDepth(102);
-    keyboardContainer.add(this.mobileDisplay);
+      const button = this.add
+        .rectangle(x, y, 80, 40, 0x007acc, 0.8)
+        .setInteractive({ useHandCursor: true })
+        .setDepth(101);
 
-    // Teclado numérico
-    const numbers = [
-      ["1", "2", "3"],
-      ["4", "5", "6"],
-      ["7", "8", "9"],
-      ["0", "⌫", "✓"],
-    ];
+      const buttonText = this.add
+        .text(x, y, option.toString(), {
+          fontFamily: "Arial",
+          fontSize: "16px",
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setDepth(102);
 
-    numbers.forEach((row, rowIndex) => {
-      row.forEach((num, colIndex) => {
-        const x = (colIndex - 1) * 60;
-        const y = rowIndex * 45 - 10;
+      optionsContainer.add(button);
+      optionsContainer.add(buttonText);
 
-        let buttonColor = 0x007acc;
-        let textColor = "#ffffff";
+      // Eventos del botón
+      button.on("pointerover", () => {
+        button.setFillStyle(0x0056b3);
+        buttonText.setScale(1.05);
+      });
 
-        if (num === "⌫") {
-          buttonColor = 0xf59e0b;
-        } else if (num === "✓") {
-          buttonColor = 0x22c55e;
-        }
+      button.on("pointerout", () => {
+        button.setFillStyle(0x007acc, 0.8);
+        buttonText.setScale(1);
+      });
 
-        const button = this.add
-          .rectangle(x, y, 50, 35, buttonColor, 0.8)
-          .setInteractive({ useHandCursor: true })
-          .setDepth(101);
+      button.on("pointerdown", () => {
+        // Verificar si es la respuesta correcta
+        if (option.toString() === correctAnswer) {
+          // Respuesta correcta
+          button.setFillStyle(0x22c55e);
+          buttonText.setText("✅ " + option.toString());
 
-        const buttonText = this.add
-          .text(x, y, num, {
-            fontFamily: "Arial",
-            fontSize: "18px",
-            color: textColor,
-            stroke: "#000000",
-            strokeThickness: 2,
-          })
-          .setOrigin(0.5)
-          .setDepth(102);
+          // Efecto de éxito
+          this.tweens.add({
+            targets: [button, buttonText],
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 200,
+            yoyo: true,
+            repeat: 1,
+          });
 
-        keyboardContainer.add(button);
-        keyboardContainer.add(buttonText);
-
-        // Eventos del botón
-        button.on("pointerover", () => {
-          button.setFillStyle(
-            buttonColor === 0x007acc ? 0x0056b3 : buttonColor
-          );
-          buttonText.setScale(1.1);
-        });
-
-        button.on("pointerout", () => {
-          button.setFillStyle(buttonColor, 0.8);
-          buttonText.setScale(1);
-        });
-
-        button.on("pointerdown", () => {
-          if (num === "⌫") {
-            // Borrar último dígito
-            this.inputText = this.inputText.slice(0, -1);
-          } else if (num === "✓") {
-            // Enviar respuesta
-            keyboardContainer.destroy();
+          // Pasar al siguiente ejercicio después de 1 segundo
+          this.time.delayedCall(1000, () => {
+            optionsContainer.destroy();
+            this.inputText = correctAnswer;
             this.checkAnswer();
-            return;
-          } else {
-            // Agregar número
-            this.inputText += num;
-          }
+          });
+        } else {
+          // Respuesta incorrecta
+          button.setFillStyle(0xef4444);
+          buttonText.setText("❌ " + option.toString());
 
-          this.mobileDisplay.setText(this.inputText);
-        });
+          // Efecto de error
+          this.tweens.add({
+            targets: [button, buttonText],
+            x: button.x - 5,
+            duration: 100,
+            yoyo: true,
+            repeat: 2,
+          });
+
+          // Restaurar después de 1 segundo
+          this.time.delayedCall(1000, () => {
+            button.setFillStyle(0x007acc, 0.8);
+            buttonText.setText(option.toString());
+            buttonText.setScale(1);
+          });
+        }
       });
     });
 
     // Guardar referencia
-    this.mobileInputContainer = keyboardContainer;
+    this.mobileInputContainer = optionsContainer;
   }
 
   createHiddenInput() {
