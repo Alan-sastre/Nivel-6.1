@@ -66,8 +66,14 @@ class DroneRepairScene extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
 
     // Detectar si es móvil
-    this.isMobile = this.gameWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet|Touch|Windows Phone/i.test(navigator.userAgent) || (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
-    
+    this.isMobile =
+      this.gameWidth < 768 ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet|Touch|Windows Phone/i.test(
+        navigator.userAgent
+      ) ||
+      "ontouchstart" in window ||
+      navigator.maxTouchPoints > 0;
+
     // Detectar plataforma para optimizaciones específicas
     this.isAndroid = navigator.userAgent.match(/Android/i) ? true : false;
     this.isIOS = navigator.userAgent.match(/iPhone|iPad|iPod/i) ? true : false;
@@ -126,7 +132,7 @@ class DroneRepairScene extends Phaser.Scene {
     if (this.isMobile) {
       // Crear el botón de opciones inmediatamente
       this.createMobileOptionsButton();
-      
+
       // Mostrar mensaje de ayuda para móviles con texto más grande
       this.time.delayedCall(500, () => {
         const helpText = this.add
@@ -146,7 +152,7 @@ class DroneRepairScene extends Phaser.Scene {
           )
           .setOrigin(0.5)
           .setDepth(100);
-          
+
         // Hacer parpadear el texto para llamar la atención
         this.tweens.add({
           targets: helpText,
@@ -159,12 +165,12 @@ class DroneRepairScene extends Phaser.Scene {
               targets: helpText,
               alpha: 0,
               duration: 800,
-              onComplete: () => helpText.destroy()
+              onComplete: () => helpText.destroy(),
             });
-          }
+          },
         });
       });
-      
+
       // Abrir automáticamente el modal de entrada para móviles después de un breve retraso
       this.time.delayedCall(1000, () => {
         // Mostrar directamente las opciones de respuesta
@@ -319,7 +325,7 @@ class DroneRepairScene extends Phaser.Scene {
 
       // Prueba directa - crear mensaje inmediatamente
       const testMessage = this.add
-        .text(this.gameWidth / 2, this.gameHeight - 100, {
+        .text(this.gameWidth / 2, this.gameHeight - 100, "Mensaje de prueba", {
           fontFamily: "Arial",
           fontSize: "24px",
           color: "#ff0000",
@@ -523,7 +529,7 @@ class DroneRepairScene extends Phaser.Scene {
             )
             .setDepth(1);
 
-          // En móviles, no usamos input HTML, solo el selector de opciones
+          // En móviles, crear un área interactiva que muestre las opciones al tocarla
           if (this.isMobile) {
             // Crear un área interactiva que muestre las opciones al tocarla
             const inputArea = this.add
@@ -537,7 +543,7 @@ class DroneRepairScene extends Phaser.Scene {
               )
               .setInteractive({ useHandCursor: true })
               .setDepth(10);
-              
+
             // Texto indicativo más descriptivo
             const placeholderText = this.add
               .text(
@@ -560,16 +566,15 @@ class DroneRepairScene extends Phaser.Scene {
               console.log("Área de input tocada");
               this.createMobileInput();
             });
-            
+
             // También hacer el fondo del input interactivo
             this.inputBg.setInteractive({ useHandCursor: true });
             this.inputBg.on("pointerdown", () => {
               console.log("Fondo del input tocado");
               this.createMobileInput();
             });
-          }
 
-            // Crear un botón adicional para móviles que abra el teclado
+            // Crear un botón adicional para móviles que abra las opciones
             const keyboardButton = this.add
               .rectangle(
                 this.editorX + 60 + inputX + 90,
@@ -597,24 +602,14 @@ class DroneRepairScene extends Phaser.Scene {
               .setDepth(16);
 
             keyboardButton.on("pointerdown", () => {
-              console.log("Botón de teclado tocado");
-              // Asegurar que cualquier input anterior esté cerrado
-              if (this.htmlInput) {
-                this.htmlInput.blur();
-              }
-              // Pequeño delay antes de mostrar las opciones
-              setTimeout(() => {
-                this.createMobileInput();
-              }, 50);
+              console.log("Botón de opciones tocado");
+              this.createMobileInput();
             });
-            
+
             // Agregar un evento de toque adicional para dispositivos móviles
             keyboardButton.on("pointerup", () => {
               // Este evento adicional ayuda en algunos dispositivos
               setTimeout(() => {
-                if (this.htmlInput) {
-                  this.htmlInput.blur();
-                }
                 this.createMobileInput();
               }, 100);
             });
@@ -789,12 +784,10 @@ class DroneRepairScene extends Phaser.Scene {
     const userAnswer = this.inputText.trim();
     const correctAnswer = this.currentExercise.correctValue;
 
-    // En móviles, si no hay respuesta del usuario, no hacer nada
-    // El usuario debe seleccionar una opción del selector
-
-    // En móviles, mostrar las opciones de respuesta
-    if (this.isMobile) {
+    // En móviles, si no hay respuesta del usuario, mostrar las opciones
+    if (this.isMobile && !userAnswer) {
       this.createMobileInput();
+      return;
     }
 
     if (userAnswer === correctAnswer) {
@@ -891,14 +884,19 @@ class DroneRepairScene extends Phaser.Scene {
       return;
     }
     console.log("Mostrando pista:", this.currentExercise.hint);
-    
+
     // Eliminar mensaje anterior si existe para evitar problemas
     if (this.messageBox) {
       this.closeMessage();
     }
-    
+
     // Mostrar el mensaje de pista con auto-cierre
-    this.showMessage(`💡 Pista: ${this.currentExercise.hint}`, "#fbbf24", false, 3000);
+    this.showMessage(
+      `💡 Pista: ${this.currentExercise.hint}`,
+      "#fbbf24",
+      false,
+      3000
+    );
   }
 
   showMessage(text, color = "#ffffff", isSpecial = false, duration = 2000) {
@@ -986,14 +984,14 @@ class DroneRepairScene extends Phaser.Scene {
           this.closeMessage();
           closeButton.destroy();
         });
-      
+
       // Agregar al grupo de mensaje para que se elimine junto con él
       if (this.messageBox) {
         this.messageBox.closeButton = closeButton;
       }
     }
   }
-  
+
   closeMessage() {
     // Función para cerrar mensajes de forma segura
     if (this.messageBox || this.messageBg) {
@@ -1002,7 +1000,7 @@ class DroneRepairScene extends Phaser.Scene {
         this.messageCloseTimer.remove();
         this.messageCloseTimer = null;
       }
-      
+
       // Animar la desaparición
       this.tweens.add({
         targets: [this.messageBox, this.messageBg],
@@ -1014,13 +1012,13 @@ class DroneRepairScene extends Phaser.Scene {
           if (this.messageBox && this.messageBox.closeButton) {
             this.messageBox.closeButton.destroy();
           }
-          
+
           // Eliminar los elementos del mensaje
           if (this.messageBox) {
             this.messageBox.destroy();
             this.messageBox = null;
           }
-          
+
           if (this.messageBg) {
             this.messageBg.destroy();
             this.messageBg = null;
@@ -1029,16 +1027,20 @@ class DroneRepairScene extends Phaser.Scene {
           // DESCONGELAR LA PANTALLA - Habilitar input nuevamente
           this.input.keyboard.enabled = true;
           this.input.mouse.enabled = true;
-          
+
           // Si estamos en móvil, intentar enfocar el input nuevamente
           if (this.isMobile && this.htmlInput) {
             setTimeout(() => {
               this.htmlInput.focus();
               // Forzar la apertura del teclado virtual
               if (navigator.userAgent.match(/Android/i)) {
-                this.htmlInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+                this.htmlInput.dispatchEvent(
+                  new TouchEvent("touchstart", { bubbles: true })
+                );
               } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-                this.htmlInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+                this.htmlInput.dispatchEvent(
+                  new MouseEvent("click", { bubbles: true })
+                );
               }
             }, 300);
           }
@@ -1057,30 +1059,37 @@ class DroneRepairScene extends Phaser.Scene {
       this.mobileInputContainer.destroy();
       this.mobileInputContainer = null;
     }
-    
+
     // Crear opciones de respuesta para móviles
     const correctAnswer = this.currentExercise.correctValue;
 
-    // Generar opciones incorrectas
+    // Generar opciones incorrectas más inteligentes
     let options = [correctAnswer];
     const correctNum = parseInt(correctAnswer);
 
-    // Agregar opciones incorrectas cercanas pero más variadas
-    options.push(correctNum + 500);
-    options.push(correctNum - 500);
-    options.push(correctNum + 1000);
-    options.push(correctNum - 1000);
-    options.push(correctNum + 200);
-    options.push(correctNum - 200);
+    // Agregar opciones incorrectas que sean plausibles pero incorrectas
+    if (correctNum === 1000) {
+      options.push(500, 1500, 2000, 750, 1250);
+    } else if (correctNum === 2000) {
+      options.push(1000, 3000, 1500, 2500, 1800);
+    } else {
+      // Para otros valores, generar opciones cercanas
+      options.push(
+        correctNum + 500,
+        correctNum - 500,
+        correctNum + 1000,
+        correctNum - 1000,
+        correctNum + 200
+      );
+    }
 
     // Mezclar las opciones
     options = options.sort(() => Math.random() - 0.5);
 
     // Crear contenedor de opciones centrado en la pantalla para mejor visibilidad
-    const optionsContainer = this.add.container(
-      this.gameWidth / 2,
-      this.gameHeight / 2
-    ).setDepth(200);
+    const optionsContainer = this.add
+      .container(this.gameWidth / 2, this.gameHeight / 2)
+      .setDepth(200);
 
     // Fondo semi-transparente para toda la pantalla
     const fullScreenBg = this.add
@@ -1111,7 +1120,7 @@ class DroneRepairScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(201);
     optionsContainer.add(title);
-    
+
     // Mostrar la pista directamente con mejor formato y mayor visibilidad
     const hint = this.add
       .text(0, -120, `💡 ${this.currentExercise.hint}`, {
@@ -1121,7 +1130,7 @@ class DroneRepairScene extends Phaser.Scene {
         stroke: "#000000",
         strokeThickness: 3, // Contorno más grueso
         align: "center",
-        wordWrap: { width: 360 }
+        wordWrap: { width: 360 },
       })
       .setOrigin(0.5)
       .setDepth(201);
@@ -1145,7 +1154,7 @@ class DroneRepairScene extends Phaser.Scene {
       const buttonText = this.add
         .text(x, y, option.toString(), {
           fontFamily: "Arial",
-          fontSize: "28px", // Texto más grande para mejor visibilidad
+          fontSize: "24px", // Texto más grande para mejor visibilidad
           color: "#ffffff",
           stroke: "#000000",
           strokeThickness: 3, // Contorno más grueso para mejor legibilidad
@@ -1184,18 +1193,11 @@ class DroneRepairScene extends Phaser.Scene {
             duration: 300,
             yoyo: true,
             repeat: 1,
-            ease: 'Bounce.Out'
+            ease: "Bounce.Out",
           });
 
-          // Sonido de éxito (si está disponible)
-          if (this.sound && this.sound.add) {
-            try {
-              const successSound = this.sound.add('success');
-              if (successSound) successSound.play({ volume: 0.5 });
-            } catch (e) {
-              // Si no existe el sonido, ignorar
-            }
-          }
+          // Mostrar mensaje de éxito
+          this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
 
           // Pasar al siguiente ejercicio después de 1.5 segundos
           this.time.delayedCall(1500, () => {
@@ -1215,18 +1217,16 @@ class DroneRepairScene extends Phaser.Scene {
             duration: 80,
             yoyo: true,
             repeat: 3,
-            ease: 'Sine.easeInOut'
+            ease: "Sine.easeInOut",
           });
 
-          // Sonido de error (si está disponible)
-          if (this.sound && this.sound.add) {
-            try {
-              const errorSound = this.sound.add('error');
-              if (errorSound) errorSound.play({ volume: 0.5 });
-            } catch (e) {
-              // Si no existe el sonido, ignorar
-            }
-          }
+          // Mostrar mensaje de error
+          this.showMessage(
+            "Incorrecto. Inténtalo de nuevo.",
+            "#f87171",
+            false,
+            1000
+          );
 
           // Restaurar después de 1 segundo
           this.time.delayedCall(1000, () => {
@@ -1244,7 +1244,7 @@ class DroneRepairScene extends Phaser.Scene {
       .circle(180, -180, 20, 0xef4444, 0.9)
       .setInteractive({ useHandCursor: true })
       .setDepth(201);
-      
+
     const closeX = this.add
       .text(180, -180, "X", {
         fontFamily: "Arial",
@@ -1255,21 +1255,21 @@ class DroneRepairScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(202);
-      
+
     optionsContainer.add(closeButton);
     optionsContainer.add(closeX);
-    
+
     // Eventos del botón de cierre
     closeButton.on("pointerover", () => {
       closeButton.setFillStyle(0xdc2626);
       closeX.setScale(1.1);
     });
-    
+
     closeButton.on("pointerout", () => {
       closeButton.setFillStyle(0xef4444, 0.9);
       closeX.setScale(1);
     });
-    
+
     closeButton.on("pointerdown", () => {
       // Efecto de cierre
       this.tweens.add({
@@ -1280,26 +1280,26 @@ class DroneRepairScene extends Phaser.Scene {
         onComplete: () => {
           // Destruir el contenedor de opciones
           optionsContainer.destroy();
-          
+
           // Mostrar mensaje de ayuda más grande y visible
-            const helpText = this.add
-              .text(
-                this.gameWidth / 2,
-                this.gameHeight - 40,
-                "Toca el botón ? para ver las opciones",
-                {
-                  fontFamily: "Arial",
-                  fontSize: "24px", // Texto más grande
-                  color: "#ffffff",
-                  stroke: "#000000",
-                  strokeThickness: 3, // Contorno más grueso
-                  backgroundColor: "#007acc", // Fondo azul para destacar
-                  padding: { x: 15, y: 8 }, // Padding para el fondo
-                }
-              )
-              .setOrigin(0.5)
-              .setDepth(100);
-              
+          const helpText = this.add
+            .text(
+              this.gameWidth / 2,
+              this.gameHeight - 40,
+              "Toca el botón ? para ver las opciones",
+              {
+                fontFamily: "Arial",
+                fontSize: "24px", // Texto más grande
+                color: "#ffffff",
+                stroke: "#000000",
+                strokeThickness: 3, // Contorno más grueso
+                backgroundColor: "#007acc", // Fondo azul para destacar
+                padding: { x: 15, y: 8 }, // Padding para el fondo
+              }
+            )
+            .setOrigin(0.5)
+            .setDepth(100);
+
           // Hacer parpadear el texto para llamar la atención con efecto más llamativo
           this.tweens.add({
             targets: helpText,
@@ -1312,14 +1312,14 @@ class DroneRepairScene extends Phaser.Scene {
                 targets: helpText,
                 alpha: 0,
                 duration: 800, // Más lento para dar tiempo a leerlo
-                onComplete: () => helpText.destroy()
+                onComplete: () => helpText.destroy(),
               });
-            }
+            },
           });
-        }
+        },
       });
     });
-    
+
     // Agregar mensaje de éxito
     const successMessage = this.add
       .text(0, 110, "¡Toca la respuesta correcta!", {
@@ -1332,7 +1332,7 @@ class DroneRepairScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(201);
     optionsContainer.add(successMessage);
-    
+
     // Efecto de entrada
     optionsContainer.setScale(0.8);
     optionsContainer.alpha = 0;
@@ -1341,9 +1341,9 @@ class DroneRepairScene extends Phaser.Scene {
       scale: 1,
       alpha: 1,
       duration: 300,
-      ease: 'Back.easeOut'
+      ease: "Back.easeOut",
     });
-    
+
     // Guardar referencia al contenedor para poder destruirlo después
     this.mobileInputContainer = optionsContainer;
   }
@@ -1351,15 +1351,19 @@ class DroneRepairScene extends Phaser.Scene {
   // Esta función ya no se usa, pero se mantiene por compatibilidad
   createHiddenInput() {
     // No hacemos nada, ahora usamos createMobileInput() en su lugar
-    console.log("createHiddenInput() está obsoleto, usando createMobileInput() en su lugar");
+    console.log(
+      "createHiddenInput() está obsoleto, usando createMobileInput() en su lugar"
+    );
     return;
   }
 
   // Esta función ya no se usa, pero se mantiene por compatibilidad
   showMobileInputModal() {
     // No hacemos nada, ahora usamos createMobileInput() en su lugar
-    console.log("showMobileInputModal() está obsoleto, usando createMobileInput() en su lugar");
-    
+    console.log(
+      "showMobileInputModal() está obsoleto, usando createMobileInput() en su lugar"
+    );
+
     // Llamar directamente a createMobileInput para mostrar las opciones
     this.createMobileInput();
     return;
@@ -1369,55 +1373,65 @@ class DroneRepairScene extends Phaser.Scene {
     // Crear un botón flotante grande y visible para mostrar las opciones de respuesta
     const buttonSize = 80; // Aumentado para mejor visibilidad
     const padding = 15; // Mayor separación del borde
-    
+
     // Contenedor del botón (para efectos y animaciones)
-    this.optionsButtonContainer = this.add.container(
-      this.gameWidth - buttonSize/2 - padding,
-      this.gameHeight - buttonSize/2 - padding
-    ).setDepth(150);
-    
+    this.optionsButtonContainer = this.add
+      .container(
+        this.gameWidth - buttonSize / 2 - padding,
+        this.gameHeight - buttonSize / 2 - padding
+      )
+      .setDepth(150);
+
     // Fondo del botón con efecto de brillo
-    const buttonBg = this.add.graphics()
+    const buttonBg = this.add
+      .graphics()
       .fillStyle(0x007acc, 1)
-      .fillCircle(0, 0, buttonSize/2)
+      .fillCircle(0, 0, buttonSize / 2)
       .lineStyle(4, 0x00a8ff, 1) // Borde más grueso
-      .strokeCircle(0, 0, buttonSize/2);
-    
+      .strokeCircle(0, 0, buttonSize / 2);
+
     // Texto del botón
-    const buttonText = this.add.text(0, 0, "?", {
-      fontFamily: "Arial",
-      fontSize: "42px", // Texto más grande
-      color: "#ffffff",
-      stroke: "#000000",
-      strokeThickness: 3 // Contorno más grueso
-    }).setOrigin(0.5);
-    
+    const buttonText = this.add
+      .text(0, 0, "?", {
+        fontFamily: "Arial",
+        fontSize: "42px", // Texto más grande
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 3, // Contorno más grueso
+      })
+      .setOrigin(0.5);
+
     // Añadir al contenedor
     this.optionsButtonContainer.add(buttonBg);
     this.optionsButtonContainer.add(buttonText);
-    
+
     // Hacer el botón interactivo
-    buttonBg.setInteractive(new Phaser.Geom.Circle(0, 0, buttonSize/2), Phaser.Geom.Circle.Contains);
-    
+    buttonBg.setInteractive(
+      new Phaser.Geom.Circle(0, 0, buttonSize / 2),
+      Phaser.Geom.Circle.Contains
+    );
+
     // Efectos al interactuar
     buttonBg.on("pointerover", () => {
-      buttonBg.clear()
+      buttonBg
+        .clear()
         .fillStyle(0x0056b3, 1)
-        .fillCircle(0, 0, buttonSize/2)
+        .fillCircle(0, 0, buttonSize / 2)
         .lineStyle(3, 0x00a8ff, 1)
-        .strokeCircle(0, 0, buttonSize/2);
+        .strokeCircle(0, 0, buttonSize / 2);
       buttonText.setScale(1.1);
     });
-    
+
     buttonBg.on("pointerout", () => {
-      buttonBg.clear()
+      buttonBg
+        .clear()
         .fillStyle(0x007acc, 1)
-        .fillCircle(0, 0, buttonSize/2)
+        .fillCircle(0, 0, buttonSize / 2)
         .lineStyle(3, 0x00a8ff, 1)
-        .strokeCircle(0, 0, buttonSize/2);
+        .strokeCircle(0, 0, buttonSize / 2);
       buttonText.setScale(1);
     });
-    
+
     // Al hacer clic, mostrar las opciones de respuesta
     buttonBg.on("pointerdown", () => {
       // Efecto de pulsación
@@ -1429,10 +1443,10 @@ class DroneRepairScene extends Phaser.Scene {
         onComplete: () => {
           // Mostrar las opciones de respuesta
           this.createMobileInput();
-        }
+        },
       });
     });
-    
+
     // Añadir una animación sutil para llamar la atención
     this.tweens.add({
       targets: this.optionsButtonContainer,
@@ -1440,9 +1454,9 @@ class DroneRepairScene extends Phaser.Scene {
       duration: 800,
       yoyo: true,
       repeat: 2,
-      ease: 'Sine.easeInOut'
+      ease: "Sine.easeInOut",
     });
-    
+
     // Guardar referencia para poder destruirlo después
     this.optionsButton = buttonBg;
   }
@@ -1458,13 +1472,13 @@ class DroneRepairScene extends Phaser.Scene {
       this.mobileInputContainer.destroy();
       this.mobileInputContainer = null;
     }
-    
+
     // Limpiar botón de opciones
     if (this.optionsButtonContainer) {
       this.optionsButtonContainer.destroy();
       this.optionsButtonContainer = null;
     }
-    
+
     // Limpiar botón de opciones (referencia antigua)
     if (this.optionsButton) {
       this.optionsButton = null;
