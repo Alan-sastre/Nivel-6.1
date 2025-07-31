@@ -130,43 +130,26 @@ class DroneRepairScene extends Phaser.Scene {
 
     // En móviles, mostrar directamente las opciones de respuesta
     if (this.isMobile) {
-      // Mostrar mensaje de ayuda para móviles con texto más grande
-      this.time.delayedCall(500, () => {
-        const helpText = this.add
-          .text(
-            this.gameWidth / 2,
-            this.gameHeight - 40,
-            "Toca el botón ? para ver las opciones de respuesta",
-            {
-              fontFamily: "Arial",
-              fontSize: "24px", // Texto más grande para mejor visibilidad
-              color: "#ffffff",
-              stroke: "#000000",
-              strokeThickness: 3,
-              backgroundColor: "#007acc", // Fondo azul para destacar
-              padding: { x: 15, y: 8 }, // Padding para el fondo
-            }
-          )
-          .setOrigin(0.5)
-          .setDepth(100);
-
-        // Hacer parpadear el texto para llamar la atención
-        this.tweens.add({
-          targets: helpText,
-          alpha: 0.6,
-          duration: 800,
-          yoyo: true,
-          repeat: 3,
-          onComplete: () => {
-            this.tweens.add({
-              targets: helpText,
-              alpha: 0,
-              duration: 800,
-              onComplete: () => helpText.destroy(),
-            });
-          },
-        });
-      });
+      // No mostrar mensaje de ayuda automático
+      // this.time.delayedCall(500, () => {
+      //   const helpText = this.add
+      //     .text(
+      //       this.gameWidth / 2,
+      //       this.gameHeight - 40,
+      //       "Toca el botón ? para ver las opciones de respuesta",
+      //       {
+      //         fontFamily: "Arial",
+      //         fontSize: "24px",
+      //         color: "#ffffff",
+      //         stroke: "#000000",
+      //         strokeThickness: 3,
+      //         backgroundColor: "#007acc",
+      //         padding: { x: 15, y: 8 },
+      //       }
+      //     )
+      //     .setOrigin(0.5)
+      //     .setDepth(100);
+      // });
 
       // Abrir automáticamente el modal de entrada para móviles después de un breve retraso
       this.time.delayedCall(1000, () => {
@@ -1127,46 +1110,29 @@ class DroneRepairScene extends Phaser.Scene {
       const x = (index - 1.5) * 70; // 4 opciones en una fila horizontal
       const y = 10; // Debajo del título
 
-      // Botón más pequeño pero fácil de tocar
-      const button = this.add
-        .rectangle(x, y, 60, 40, 0x3b82f6, 0.9) // Botón más pequeño
-        .setInteractive({ useHandCursor: true, draggable: false })
-        .setDepth(201)
-        .setOrigin(0.5)
-        .setStrokeStyle(2, 0x60a5fa); // Borde más delgado
+      // Crear botón como rectángulo simple
+      const button = this.add.rectangle(x, y, 60, 40, 0x3b82f6);
+      button.setInteractive();
+      button.setDepth(201);
 
+      // Crear el texto del botón
       const buttonText = this.add
         .text(x, y, option.toString(), {
           fontFamily: "Arial",
-          fontSize: "16px", // Texto más pequeño
+          fontSize: "16px",
           color: "#ffffff",
           stroke: "#000000",
-          strokeThickness: 2, // Contorno más delgado
+          strokeThickness: 2,
         })
         .setOrigin(0.5)
         .setDepth(202);
 
+      // Agregar al contenedor
       optionsContainer.add(button);
       optionsContainer.add(buttonText);
 
-      // Eventos del botón
-      button.on("pointerover", () => {
-        button.setFillStyle(0x2563eb);
-        button.setScale(1.05);
-        buttonText.setScale(1.05);
-      });
-
-      button.on("pointerout", () => {
-        button.setFillStyle(0x3b82f6, 0.9);
-        button.setScale(1);
-        buttonText.setScale(1);
-      });
-
-      // Evento de clic simple
-      button.on("pointerdown", (event) => {
-        // Prevenir que el evento se propague
-        event.stopPropagation();
-
+      // Evento simple de clic
+      button.on("pointerdown", () => {
         console.log("Botón tocado:", option.toString());
 
         if (option.toString() === correctAnswer) {
@@ -1196,15 +1162,10 @@ class DroneRepairScene extends Phaser.Scene {
           );
 
           this.time.delayedCall(1000, () => {
-            button.setFillStyle(0x3b82f6, 0.9);
+            button.setFillStyle(0x3b82f6);
             buttonText.setText(option.toString());
           });
         }
-      });
-
-      // Agregar también evento pointerup para mejor compatibilidad móvil
-      button.on("pointerup", (event) => {
-        event.stopPropagation();
       });
     });
 
