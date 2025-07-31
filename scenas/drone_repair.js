@@ -84,7 +84,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Dron más grande - empieza rojo (ajustado para móviles)
     const droneX = this.isMobile ? 80 : 120;
-    const droneScale = this.isMobile ? 0.35 : 0.45;
+    const droneScale = this.isMobile ? 0.5 : 0.6; // Dron más grande
 
     this.drone = this.add
       .image(droneX, this.gameHeight / 2, "drone_red")
@@ -114,6 +114,11 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Configurar entrada de teclado
     this.setupKeyboard();
+
+    // En móviles, crear un input oculto para forzar la apertura del teclado
+    if (this.isMobile) {
+      this.createHiddenInput();
+    }
   }
 
   setupMinimalUI() {
@@ -666,6 +671,14 @@ class DroneRepairScene extends Phaser.Scene {
             this.time.delayedCall(1000, () => {
               this.showMobileInputModal();
             });
+
+            // También activar el input oculto
+            if (this.hiddenInput) {
+              this.time.delayedCall(800, () => {
+                this.hiddenInput.focus();
+                this.hiddenInput.click();
+              });
+            }
           }
         }
       } else {
@@ -931,6 +944,45 @@ class DroneRepairScene extends Phaser.Scene {
     }
   }
 
+  createHiddenInput() {
+    // Crear un input HTML oculto que se active automáticamente
+    this.hiddenInput = document.createElement("input");
+    this.hiddenInput.type = "tel";
+    this.hiddenInput.style.position = "absolute";
+    this.hiddenInput.style.left = "-9999px";
+    this.hiddenInput.style.top = "-9999px";
+    this.hiddenInput.style.width = "1px";
+    this.hiddenInput.style.height = "1px";
+    this.hiddenInput.style.opacity = "0";
+    this.hiddenInput.style.pointerEvents = "none";
+    this.hiddenInput.setAttribute("inputmode", "numeric");
+    this.hiddenInput.setAttribute("pattern", "[0-9]*");
+
+    document.body.appendChild(this.hiddenInput);
+
+    // Activar el input después de un breve delay
+    this.time.delayedCall(500, () => {
+      this.hiddenInput.focus();
+      this.hiddenInput.click();
+    });
+
+    // También activar cuando se toque la pantalla
+    this.input.on("pointerdown", () => {
+      this.hiddenInput.focus();
+    });
+
+    // Agregar evento global para cualquier toque
+    document.addEventListener(
+      "touchstart",
+      () => {
+        if (this.hiddenInput) {
+          this.hiddenInput.focus();
+        }
+      },
+      { once: true }
+    );
+  }
+
   showMobileInputModal() {
     // Crear modal para input en móviles
     const modal = document.createElement("div");
@@ -955,12 +1007,12 @@ class DroneRepairScene extends Phaser.Scene {
 
     const input = document.createElement("input");
     input.type = "tel"; // Cambiar a tel para mejor compatibilidad móvil
-    input.style.width = "200px";
-    input.style.height = "50px";
-    input.style.fontSize = "24px";
+    input.style.width = "250px";
+    input.style.height = "60px";
+    input.style.fontSize = "28px";
     input.style.textAlign = "center";
-    input.style.border = "3px solid #007acc";
-    input.style.borderRadius = "10px";
+    input.style.border = "4px solid #007acc";
+    input.style.borderRadius = "15px";
     input.style.outline = "none";
     input.style.backgroundColor = "#1e1e1e";
     input.style.color = "#ffffff";
@@ -971,13 +1023,13 @@ class DroneRepairScene extends Phaser.Scene {
 
     const button = document.createElement("button");
     button.textContent = "Enviar";
-    button.style.marginTop = "20px";
-    button.style.padding = "10px 30px";
-    button.style.fontSize = "18px";
+    button.style.marginTop = "25px";
+    button.style.padding = "15px 40px";
+    button.style.fontSize = "20px";
     button.style.backgroundColor = "#22c55e";
     button.style.color = "#ffffff";
     button.style.border = "none";
-    button.style.borderRadius = "8px";
+    button.style.borderRadius = "10px";
     button.style.cursor = "pointer";
 
     const closeButton = document.createElement("button");
@@ -1061,6 +1113,12 @@ class DroneRepairScene extends Phaser.Scene {
     if (this.htmlInput) {
       this.htmlInput.remove();
       this.htmlInput = null;
+    }
+
+    // Limpiar input oculto
+    if (this.hiddenInput) {
+      this.hiddenInput.remove();
+      this.hiddenInput = null;
     }
 
     // Limpiar el teclado
