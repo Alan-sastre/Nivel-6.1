@@ -469,7 +469,7 @@ class DroneRepairScene extends Phaser.Scene {
 
           // En móviles, usar input HTML real para abrir el teclado
           if (this.isMobile) {
-            // Crear input HTML real
+            // Crear input HTML real con mejor posicionamiento
             this.htmlInput = document.createElement("input");
             this.htmlInput.type = "text";
             this.htmlInput.style.position = "absolute";
@@ -483,8 +483,14 @@ class DroneRepairScene extends Phaser.Scene {
             this.htmlInput.style.color = "#ffffff";
             this.htmlInput.style.fontFamily = "Consolas, monospace";
             this.htmlInput.style.fontSize = "12px";
-            this.htmlInput.style.zIndex = "1000";
+            this.htmlInput.style.zIndex = "9999";
             this.htmlInput.style.caretColor = "#ffffff";
+            this.htmlInput.style.pointerEvents = "auto";
+            this.htmlInput.style.touchAction = "manipulation";
+
+            // Agregar atributos para móviles
+            this.htmlInput.setAttribute("inputmode", "numeric");
+            this.htmlInput.setAttribute("pattern", "[0-9]*");
 
             // Agregar al DOM
             document.body.appendChild(this.htmlInput);
@@ -502,7 +508,12 @@ class DroneRepairScene extends Phaser.Scene {
               }
             });
 
-            // Hacer el input interactivo con Phaser
+            // Evento de focus para debug
+            this.htmlInput.addEventListener("focus", () => {
+              console.log("Input HTML enfocado - teclado debería abrirse");
+            });
+
+            // Hacer el input interactivo con Phaser - área más grande
             const inputArea = this.add
               .rectangle(
                 this.editorX + 60 + inputX + 40,
@@ -515,8 +526,55 @@ class DroneRepairScene extends Phaser.Scene {
               .setInteractive({ useHandCursor: true })
               .setDepth(10);
 
-            inputArea.on("pointerdown", () => {
+            inputArea.on("pointerdown", (pointer) => {
+              console.log("Área de input tocada");
               this.htmlInput.focus();
+              // Forzar el foco después de un pequeño delay
+              setTimeout(() => {
+                this.htmlInput.focus();
+              }, 100);
+            });
+
+            // También hacer el fondo del input interactivo
+            this.inputBg.setInteractive({ useHandCursor: true });
+            this.inputBg.on("pointerdown", () => {
+              console.log("Fondo del input tocado");
+              this.htmlInput.focus();
+              setTimeout(() => {
+                this.htmlInput.focus();
+              }, 100);
+            });
+
+            // Crear un botón adicional para móviles que abra el teclado
+            const keyboardButton = this.add
+              .rectangle(
+                this.editorX + 60 + inputX + 90,
+                this.editorY + 20 + y + 10,
+                30,
+                20,
+                0x007acc,
+                0.8
+              )
+              .setInteractive({ useHandCursor: true })
+              .setDepth(15);
+
+            const keyboardText = this.add
+              .text(
+                this.editorX + 60 + inputX + 105,
+                this.editorY + 20 + y + 10,
+                "⌨️",
+                {
+                  fontFamily: "Arial",
+                  fontSize: "12px",
+                  color: "#ffffff",
+                }
+              )
+              .setOrigin(0.5)
+              .setDepth(16);
+
+            keyboardButton.on("pointerdown", () => {
+              console.log("Botón de teclado tocado");
+              this.showMobileInputModal();
             });
           } else {
             // En desktop, usar el sistema original
@@ -583,7 +641,7 @@ class DroneRepairScene extends Phaser.Scene {
               this.gameWidth / 2,
               this.gameHeight - 40,
               this.isMobile
-                ? "💡 Toca el campo azul para abrir el teclado"
+                ? "💡 Toca el botón ⌨️ para abrir el teclado"
                 : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
@@ -869,6 +927,97 @@ class DroneRepairScene extends Phaser.Scene {
         }
       });
     }
+  }
+
+  showMobileInputModal() {
+    // Crear modal para input en móviles
+    const modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.backgroundColor = "rgba(0,0,0,0.8)";
+    modal.style.zIndex = "10000";
+    modal.style.display = "flex";
+    modal.style.justifyContent = "center";
+    modal.style.alignItems = "center";
+    modal.style.flexDirection = "column";
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.style.width = "200px";
+    input.style.height = "50px";
+    input.style.fontSize = "24px";
+    input.style.textAlign = "center";
+    input.style.border = "3px solid #007acc";
+    input.style.borderRadius = "10px";
+    input.style.outline = "none";
+    input.style.backgroundColor = "#1e1e1e";
+    input.style.color = "#ffffff";
+    input.placeholder = "Escribe tu respuesta";
+
+    const button = document.createElement("button");
+    button.textContent = "Enviar";
+    button.style.marginTop = "20px";
+    button.style.padding = "10px 30px";
+    button.style.fontSize = "18px";
+    button.style.backgroundColor = "#22c55e";
+    button.style.color = "#ffffff";
+    button.style.border = "none";
+    button.style.borderRadius = "8px";
+    button.style.cursor = "pointer";
+
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "✕";
+    closeButton.style.position = "absolute";
+    closeButton.style.top = "20px";
+    closeButton.style.right = "20px";
+    closeButton.style.width = "40px";
+    closeButton.style.height = "40px";
+    closeButton.style.fontSize = "20px";
+    closeButton.style.backgroundColor = "#ef4444";
+    closeButton.style.color = "#ffffff";
+    closeButton.style.border = "none";
+    closeButton.style.borderRadius = "50%";
+    closeButton.style.cursor = "pointer";
+
+    modal.appendChild(closeButton);
+    modal.appendChild(input);
+    modal.appendChild(button);
+
+    document.body.appendChild(modal);
+
+    // Enfocar el input automáticamente
+    setTimeout(() => {
+      input.focus();
+    }, 100);
+
+    // Eventos
+    const handleSubmit = () => {
+      this.inputText = input.value;
+      this.updateInputDisplay();
+      document.body.removeChild(modal);
+      this.checkAnswer();
+    };
+
+    const handleClose = () => {
+      document.body.removeChild(modal);
+    };
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleSubmit();
+      }
+    });
+
+    button.addEventListener("click", handleSubmit);
+    closeButton.addEventListener("click", handleClose);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        handleClose();
+      }
+    });
   }
 
   shutdown() {
