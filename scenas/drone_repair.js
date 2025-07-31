@@ -1050,6 +1050,10 @@ class DroneRepairScene extends Phaser.Scene {
       this.mobileInputContainer = null;
     }
 
+    // Limpiar botones HTML anteriores
+    const existingButtons = document.querySelectorAll(".mobile-option-button");
+    existingButtons.forEach((btn) => btn.remove());
+
     // Crear opciones de respuesta para móviles
     const correctAnswer = this.currentExercise.correctValue;
 
@@ -1079,8 +1083,7 @@ class DroneRepairScene extends Phaser.Scene {
     // Crear contenedor de opciones debajo del dron, más a la izquierda
     const optionsContainer = this.add
       .container(this.gameWidth * 0.25, this.gameHeight * 0.75)
-      .setDepth(200)
-      .setInteractive(false); // Deshabilitar interacción del contenedor
+      .setDepth(200);
 
     // Fondo semi-transparente solo para el área de opciones
     const bg = this.add
@@ -1131,8 +1134,8 @@ class DroneRepairScene extends Phaser.Scene {
       optionsContainer.add(button);
       optionsContainer.add(buttonText);
 
-      // Evento simple de clic
-      button.on("pointerdown", () => {
+      // Función para manejar la respuesta
+      const handleAnswer = () => {
         console.log("Botón tocado:", option.toString());
 
         if (option.toString() === correctAnswer) {
@@ -1166,6 +1169,16 @@ class DroneRepairScene extends Phaser.Scene {
             buttonText.setText(option.toString());
           });
         }
+      };
+
+      // Múltiples eventos para asegurar que funcione
+      button.on("pointerdown", handleAnswer);
+      button.on("pointerup", handleAnswer);
+      button.on("pointerover", () => {
+        button.setFillStyle(0x2563eb);
+      });
+      button.on("pointerout", () => {
+        button.setFillStyle(0x3b82f6);
       });
     });
 
@@ -1200,6 +1213,79 @@ class DroneRepairScene extends Phaser.Scene {
 
     console.log("Opciones creadas:", options.slice(0, 4));
     console.log("Respuesta correcta:", correctAnswer);
+    console.log(
+      "Contenedor de opciones creado en:",
+      this.gameWidth * 0.25,
+      this.gameHeight * 0.75
+    );
+
+    // Verificar que los botones se crearon
+    setTimeout(() => {
+      console.log("Verificando botones creados...");
+      const buttons = optionsContainer.getAll();
+      console.log("Elementos en contenedor:", buttons.length);
+    }, 100);
+
+    // Crear botones HTML como respaldo
+    options.slice(0, 4).forEach((option, index) => {
+      const button = document.createElement("button");
+      button.className = "mobile-option-button";
+      button.textContent = option.toString();
+      button.style.cssText = `
+        position: absolute;
+        left: ${this.gameWidth * 0.25 + (index - 1.5) * 70 - 30}px;
+        top: ${this.gameHeight * 0.75 + 10 - 20}px;
+        width: 60px;
+        height: 40px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        z-index: 1000;
+        cursor: pointer;
+      `;
+
+      button.onclick = () => {
+        console.log("Botón HTML tocado:", option.toString());
+        if (option.toString() === correctAnswer) {
+          console.log("¡Correcto!");
+          button.style.background = "#22c55e";
+          button.textContent = "✅ " + option.toString();
+
+          this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
+
+          setTimeout(() => {
+            if (optionsContainer) {
+              optionsContainer.destroy();
+            }
+            const buttons = document.querySelectorAll(".mobile-option-button");
+            buttons.forEach((btn) => btn.remove());
+            this.inputText = correctAnswer;
+            this.checkAnswer();
+          }, 1500);
+        } else {
+          console.log("Incorrecto");
+          button.style.background = "#ef4444";
+          button.textContent = "❌ " + option.toString();
+
+          this.showMessage(
+            "Incorrecto. Inténtalo de nuevo.",
+            "#f87171",
+            false,
+            1000
+          );
+
+          setTimeout(() => {
+            button.style.background = "#3b82f6";
+            button.textContent = option.toString();
+          }, 1000);
+        }
+      };
+
+      document.body.appendChild(button);
+    });
   }
 
   // Esta función ya no se usa, pero se mantiene por compatibilidad
