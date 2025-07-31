@@ -396,6 +396,12 @@ class DroneRepairScene extends Phaser.Scene {
       this.htmlInput = null;
     }
 
+    // Limpiar opciones móviles
+    if (this.mobileOptionsContainer) {
+      this.mobileOptionsContainer.destroy();
+      this.mobileOptionsContainer = null;
+    }
+
     // Limpiar título anterior
     if (this.exerciseTitle) {
       this.exerciseTitle.destroy();
@@ -641,7 +647,7 @@ class DroneRepairScene extends Phaser.Scene {
               this.gameWidth / 2,
               this.gameHeight - 40,
               this.isMobile
-                ? "💡 El teclado se abrirá automáticamente"
+                ? "💡 Selecciona tu respuesta de las opciones"
                 : "💡 Haz clic en el campo azul para escribir tu respuesta",
               {
                 fontFamily: "Arial",
@@ -666,19 +672,11 @@ class DroneRepairScene extends Phaser.Scene {
             });
           });
 
-          // En móviles, abrir automáticamente el teclado después de un breve delay
+          // En móviles, mostrar opciones de respuesta en lugar del teclado
           if (this.isMobile) {
             this.time.delayedCall(1000, () => {
-              this.showMobileInputModal();
+              this.showMobileOptions();
             });
-
-            // También activar el input oculto
-            if (this.hiddenInput) {
-              this.time.delayedCall(800, () => {
-                this.hiddenInput.focus();
-                this.hiddenInput.click();
-              });
-            }
           }
         }
       } else {
@@ -756,6 +754,11 @@ class DroneRepairScene extends Phaser.Scene {
 
     const userAnswer = this.inputText.trim();
     const correctAnswer = this.currentExercise.correctValue;
+
+    // En móviles, si no hay input text, usar la respuesta correcta directamente
+    if (this.isMobile && !userAnswer) {
+      this.inputText = correctAnswer;
+    }
 
     if (userAnswer === correctAnswer) {
       // Respuesta correcta - solo mostrar mensaje si no es el último ejercicio
@@ -944,6 +947,123 @@ class DroneRepairScene extends Phaser.Scene {
     }
   }
 
+  showMobileOptions() {
+    // Crear opciones de respuesta para móviles
+    const correctAnswer = this.currentExercise.correctValue;
+
+    // Generar opciones incorrectas
+    let options = [correctAnswer];
+    const correctNum = parseInt(correctAnswer);
+
+    // Agregar opciones incorrectas
+    options.push(correctNum + 500);
+    options.push(correctNum - 500);
+    options.push(correctNum + 1000);
+    options.push(correctNum - 1000);
+
+    // Mezclar las opciones
+    options = options.sort(() => Math.random() - 0.5);
+
+    // Crear contenedor de opciones
+    const optionsContainer = this.add.container(
+      this.gameWidth / 2,
+      this.gameHeight - 120
+    );
+
+    // Título
+    const title = this.add
+      .text(0, -60, "Selecciona tu respuesta:", {
+        fontFamily: "Arial",
+        fontSize: "20px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+    optionsContainer.add(title);
+
+    // Crear botones de opciones
+    options.forEach((option, index) => {
+      const button = this.add
+        .rectangle(0, index * 50, 200, 40, 0x007acc, 0.8)
+        .setInteractive({ useHandCursor: true })
+        .setDepth(100);
+
+      const buttonText = this.add
+        .text(0, index * 50, option.toString(), {
+          fontFamily: "Arial",
+          fontSize: "18px",
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setDepth(101);
+
+      optionsContainer.add(button);
+      optionsContainer.add(buttonText);
+
+      // Eventos del botón
+      button.on("pointerover", () => {
+        button.setFillStyle(0x0056b3);
+        buttonText.setScale(1.05);
+      });
+
+      button.on("pointerout", () => {
+        button.setFillStyle(0x007acc, 0.8);
+        buttonText.setScale(1);
+      });
+
+      button.on("pointerdown", () => {
+        // Verificar si es la respuesta correcta
+        if (option.toString() === correctAnswer) {
+          // Respuesta correcta
+          button.setFillStyle(0x22c55e);
+          buttonText.setText("✅ " + option.toString());
+
+          // Efecto de éxito
+          this.tweens.add({
+            targets: [button, buttonText],
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 200,
+            yoyo: true,
+            repeat: 1,
+          });
+
+          // Pasar al siguiente ejercicio después de 1 segundo
+          this.time.delayedCall(1000, () => {
+            optionsContainer.destroy();
+            this.checkAnswer();
+          });
+        } else {
+          // Respuesta incorrecta
+          button.setFillStyle(0xef4444);
+          buttonText.setText("❌ " + option.toString());
+
+          // Efecto de error
+          this.tweens.add({
+            targets: [button, buttonText],
+            x: button.x - 5,
+            duration: 100,
+            yoyo: true,
+            repeat: 2,
+          });
+
+          // Restaurar después de 1 segundo
+          this.time.delayedCall(1000, () => {
+            button.setFillStyle(0x007acc, 0.8);
+            buttonText.setText(option.toString());
+            buttonText.setScale(1);
+          });
+        }
+      });
+    });
+
+    // Guardar referencia para limpiar
+    this.mobileOptionsContainer = optionsContainer;
+  }
+
   createHiddenInput() {
     // Crear un input HTML oculto que se active automáticamente
     this.hiddenInput = document.createElement("input");
@@ -1119,6 +1239,12 @@ class DroneRepairScene extends Phaser.Scene {
     if (this.hiddenInput) {
       this.hiddenInput.remove();
       this.hiddenInput = null;
+    }
+
+    // Limpiar opciones móviles
+    if (this.mobileOptionsContainer) {
+      this.mobileOptionsContainer.destroy();
+      this.mobileOptionsContainer = null;
     }
 
     // Limpiar el teclado
