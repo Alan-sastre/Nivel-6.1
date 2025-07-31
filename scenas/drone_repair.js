@@ -549,10 +549,10 @@ class DroneRepairScene extends Phaser.Scene {
               .text(
                 this.editorX + 60 + inputX + 40,
                 this.editorY + 20 + y + 10,
-                "Toca aquí",
+                "Toca para opciones",
                 {
                   fontFamily: "Consolas, monospace",
-                  fontSize: "14px",
+                  fontSize: "12px",
                   color: "#ffffff",
                   stroke: "#000000",
                   strokeThickness: 1,
@@ -784,8 +784,16 @@ class DroneRepairScene extends Phaser.Scene {
     const userAnswer = this.inputText.trim();
     const correctAnswer = this.currentExercise.correctValue;
 
+    console.log(
+      "checkAnswer llamado - userAnswer:",
+      userAnswer,
+      "correctAnswer:",
+      correctAnswer
+    );
+
     // En móviles, si no hay respuesta del usuario, mostrar las opciones
     if (this.isMobile && !userAnswer) {
+      console.log("Mostrando opciones móviles");
       this.createMobileInput();
       return;
     }
@@ -1054,6 +1062,8 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   createMobileInput() {
+    console.log("createMobileInput llamado");
+
     // Si ya existe un contenedor de opciones, destruirlo primero
     if (this.mobileInputContainer) {
       this.mobileInputContainer.destroy();
@@ -1086,9 +1096,9 @@ class DroneRepairScene extends Phaser.Scene {
     // Mezclar las opciones
     options = options.sort(() => Math.random() - 0.5);
 
-    // Crear contenedor de opciones debajo del dron
+    // Crear contenedor de opciones debajo del dron, más a la izquierda
     const optionsContainer = this.add
-      .container(this.gameWidth / 2, this.gameHeight * 0.75)
+      .container(this.gameWidth * 0.35, this.gameHeight * 0.75)
       .setDepth(200);
 
     // Fondo semi-transparente solo para el área de opciones
@@ -1155,8 +1165,17 @@ class DroneRepairScene extends Phaser.Scene {
       });
 
       button.on("pointerdown", () => {
+        console.log(
+          "Botón tocado:",
+          option.toString(),
+          "Respuesta correcta:",
+          correctAnswer
+        );
+
         // Verificar si es la respuesta correcta
         if (option.toString() === correctAnswer) {
+          console.log("¡Respuesta correcta!");
+
           // Respuesta correcta - efecto más llamativo
           button.setFillStyle(0x22c55e); // Verde
           buttonText.setText("✅ " + option.toString());
@@ -1177,11 +1196,15 @@ class DroneRepairScene extends Phaser.Scene {
 
           // Pasar al siguiente ejercicio después de 1.5 segundos
           this.time.delayedCall(1500, () => {
-            optionsContainer.destroy();
+            if (optionsContainer) {
+              optionsContainer.destroy();
+            }
             this.inputText = correctAnswer;
             this.checkAnswer();
           });
         } else {
+          console.log("Respuesta incorrecta");
+
           // Respuesta incorrecta - efecto mejorado
           button.setFillStyle(0xef4444); // Rojo
           buttonText.setText("❌ " + option.toString());
@@ -1215,20 +1238,20 @@ class DroneRepairScene extends Phaser.Scene {
       });
     });
 
-    // Agregar mensaje de ayuda
-    const helpMessage = this.add
-      .text(0, 35, "💡 " + this.currentExercise.hint, {
-        fontFamily: "Arial",
-        fontSize: "14px",
-        color: "#fbbf24",
-        stroke: "#000000",
-        strokeThickness: 1,
-        align: "center",
-        wordWrap: { width: 280 },
-      })
-      .setOrigin(0.5)
-      .setDepth(201);
-    optionsContainer.add(helpMessage);
+    // Agregar mensaje de ayuda (solo si se presiona el botón de pista)
+    // const helpMessage = this.add
+    //   .text(0, 35, "💡 " + this.currentExercise.hint, {
+    //     fontFamily: "Arial",
+    //     fontSize: "14px",
+    //     color: "#fbbf24",
+    //     stroke: "#000000",
+    //     strokeThickness: 1,
+    //     align: "center",
+    //     wordWrap: { width: 280 },
+    //   })
+    //   .setOrigin(0.5)
+    //   .setDepth(201);
+    // optionsContainer.add(helpMessage);
 
     // Efecto de entrada más sutil
     optionsContainer.setScale(0.9);
@@ -1243,6 +1266,9 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Guardar referencia al contenedor para poder destruirlo después
     this.mobileInputContainer = optionsContainer;
+
+    console.log("Opciones creadas:", options.slice(0, 4));
+    console.log("Respuesta correcta:", correctAnswer);
   }
 
   // Esta función ya no se usa, pero se mantiene por compatibilidad
