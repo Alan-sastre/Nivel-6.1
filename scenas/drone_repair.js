@@ -232,124 +232,171 @@ class DroneRepairScene extends Phaser.Scene {
   }
 
   createMinimalButtons() {
-    // Configuración de botones
+    // Crear botones usando elementos de Phaser para posicionamiento correcto
     const buttonWidth = this.isMobile ? 140 : 160;
     const buttonHeight = this.isMobile ? 50 : 45;
-    const buttonSpacing = 20;
-    
-    // Posicionamiento de los botones
+    const buttonSpacing = this.isMobile ? 15 : 20;
+
+    // Posición de los botones - centrados debajo del editor
     const buttonY = this.editorY + this.editorHeight + 20;
-    const totalWidth = (buttonWidth * 2) + buttonSpacing;
-    const startX = (this.gameWidth - totalWidth) / 2;
-    
-    // Crear contenedor para los botones
-    this.buttonsContainer = this.add.container(0, 0).setDepth(100);
-    
-    // Función para crear un botón
-    const createButton = (x, y, text, color, hoverColor, onClick) => {
-      // Crear fondo del botón
-      const buttonBg = this.add.graphics()
-        .fillStyle(color, 1)
-        .fillRoundedRect(0, 0, buttonWidth, buttonHeight, 8)
-        .lineStyle(2, 0x000000, 1)
-        .strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 8);
-      
-      // Crear texto del botón
-      const buttonText = this.add.text(
-        buttonWidth / 2,
-        buttonHeight / 2,
-        text,
+
+    // Calcular el centro exacto del editor
+    const editorCenterX = this.editorX + this.editorWidth / 2;
+
+    // Posición del botón izquierdo (pista) - a la izquierda del centro
+    const hintButtonX = editorCenterX - buttonWidth - buttonSpacing / 2;
+
+    // Posición del botón derecho (comprobar) - a la derecha del centro
+    const checkButtonX = editorCenterX + buttonSpacing / 2;
+
+    // Debug: mostrar las coordenadas en consola
+    console.log("Editor X:", this.editorX);
+    console.log("Editor Y:", this.editorY);
+    console.log("Editor Height:", this.editorHeight);
+    console.log("Editor Width:", this.editorWidth);
+    console.log("Editor Center X:", editorCenterX);
+    console.log("Button Y:", buttonY);
+    console.log("Hint Button X:", hintButtonX);
+    console.log("Check Button X:", checkButtonX);
+    console.log("Game Width:", this.gameWidth);
+
+    // Botón de pista usando Phaser
+    this.hintButton = this.add
+      .rectangle(
+        hintButtonX + buttonWidth / 2,
+        buttonY + buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        0xfbbf24
+      )
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
+
+    // Texto del botón pista
+    this.hintButtonText = this.add
+      .text(
+        hintButtonX + buttonWidth / 2,
+        buttonY + buttonHeight / 2,
+        "💡 Pista",
         {
-          fontFamily: 'Arial',
-          fontSize: this.isMobile ? '18px' : '16px',
-          color: '#ffffff',
-          stroke: '#000000',
-          strokeThickness: 2
+          fontFamily: "Arial",
+          fontSize: this.isMobile ? "18px" : "16px",
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 2,
         }
-      ).setOrigin(0.5);
+      )
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    // Eventos del botón pista
+    this.hintButton.on("pointerover", () => {
+      if (!this.isMobile) {
+        this.hintButton.setFillStyle(0xf59e0b);
+        this.hintButtonText.setScale(1.05);
+      }
+    });
+
+    this.hintButton.on("pointerout", () => {
+      if (!this.isMobile) {
+        this.hintButton.setFillStyle(0xfbbf24);
+        this.hintButtonText.setScale(1);
+      }
+    });
+
+    // Función para manejar el clic en el botón de pista
+    const onHintClick = (pointer) => {
+      // Efecto visual inmediato
+      this.hintButton.setFillStyle(0xf59e0b);
+      this.hintButtonText.setScale(0.95);
       
-      // Crear contenedor para el botón
-      const button = this.add.container(x, y, [buttonBg, buttonText])
-        .setSize(buttonWidth, buttonHeight)
-        .setInteractive(
-          new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight),
-          Phaser.Geom.Rectangle.Contains
-        )
-        .on('pointerover', () => {
-          if (this.isMobile) return;
-          buttonBg.clear()
-            .fillStyle(hoverColor, 1)
-            .fillRoundedRect(0, 0, buttonWidth, buttonHeight, 8)
-            .lineStyle(2, 0x000000, 1)
-            .strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 8);
-          buttonText.setScale(1.05);
-        })
-        .on('pointerout', () => {
-          if (this.isMobile) return;
-          buttonBg.clear()
-            .fillStyle(color, 1)
-            .fillRoundedRect(0, 0, buttonWidth, buttonHeight, 8)
-            .lineStyle(2, 0x000000, 1)
-            .strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 8);
-          buttonText.setScale(1);
-        })
-        .on('pointerdown', () => {
-          // Efecto de presión
-          button.setScale(0.95);
-          
-          // Ejecutar la acción después de un breve retraso
-          this.time.delayedCall(100, () => {
-            button.setScale(1);
-            onClick();
-          });
-        });
+      console.log("Botón Pista clickeado!");
       
-      // Hacer que el texto también sea interactivo
-      buttonText.setInteractive({
-        hitArea: new Phaser.Geom.Rectangle(0, 0, buttonWidth, buttonHeight),
-        hitAreaCallback: Phaser.Geom.Rectangle.Contains,
-        useHandCursor: true
+      // Restaurar apariencia después de un breve retraso
+      this.time.delayedCall(150, () => {
+        this.hintButton.setFillStyle(0xfbbf24);
+        this.hintButtonText.setScale(1);
       });
       
-      // Mismos eventos para el texto
-      buttonText.on('pointerdown', () => button.emit('pointerdown'));
-      buttonText.on('pointerup', () => button.emit('pointerup'));
-      
-      return button;
+      // Ejecutar acción
+      this.showHint();
     };
     
-    // Crear botón de pista
-    const hintButton = createButton(
-      startX,
-      buttonY,
-      '💡 Pista',
-      0xfbbf24, // Color normal
-      0xf59e0b, // Color hover
-      () => {
-        console.log('Botón Pista clickeado!');
-        this.showHint();
+    // Asignar manejadores de eventos
+    this.hintButton.on("pointerdown", (pointer) => onHintClick(pointer));
+    this.hintButton.on("pointerup", (pointer) => onHintClick(pointer));
+    this.hintButtonText.setInteractive({ useHandCursor: true })
+      .on("pointerdown", (pointer) => onHintClick(pointer))
+      .on("pointerup", (pointer) => onHintClick(pointer));
+
+    // Botón de comprobar usando Phaser
+    this.checkButton = this.add
+      .rectangle(
+        checkButtonX + buttonWidth / 2,
+        buttonY + buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        0x22c55e
+      )
+      .setInteractive({ useHandCursor: true })
+      .setDepth(100);
+
+    // Texto del botón comprobar
+    this.checkButtonText = this.add
+      .text(
+        checkButtonX + buttonWidth / 2,
+        buttonY + buttonHeight / 2,
+        "✅ Comprobar",
+        {
+          fontFamily: "Arial",
+          fontSize: this.isMobile ? "18px" : "16px",
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 2,
+        }
+      )
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    // Eventos del botón comprobar
+    this.checkButton.on("pointerover", () => {
+      if (!this.isMobile) {
+        this.checkButton.setFillStyle(0x16a34a);
+        this.checkButtonText.setScale(1.05);
       }
-    );
-    
-    // Crear botón de comprobar
-    const checkButton = createButton(
-      startX + buttonWidth + buttonSpacing,
-      buttonY,
-      '✅ Comprobar',
-      0x22c55e, // Color normal
-      0x16a34a, // Color hover
-      () => {
-        console.log('Botón Comprobar clickeado!');
-        this.checkAnswer();
+    });
+
+    this.checkButton.on("pointerout", () => {
+      if (!this.isMobile) {
+        this.checkButton.setFillStyle(0x22c55e);
+        this.checkButtonText.setScale(1);
       }
-    );
+    });
+
+    // Función para manejar el clic en el botón de comprobar
+    const onCheckClick = (pointer) => {
+      // Efecto visual inmediato
+      this.checkButton.setFillStyle(0x16a34a);
+      this.checkButtonText.setScale(0.95);
+      
+      console.log("Botón Comprobar clickeado!");
+      
+      // Restaurar apariencia después de un breve retraso
+      this.time.delayedCall(150, () => {
+        this.checkButton.setFillStyle(0x22c55e);
+        this.checkButtonText.setScale(1);
+      });
+      
+      // Ejecutar acción
+      this.checkAnswer();
+    };
     
-    // Agregar botones al contenedor
-    this.buttonsContainer.add([hintButton, checkButton]);
-    
-    // Guardar referencias para acceso posterior
-    this.hintButton = hintButton;
-    this.checkButton = checkButton;
+    // Asignar manejadores de eventos
+    this.checkButton.on("pointerdown", (pointer) => onCheckClick(pointer));
+    this.checkButton.on("pointerup", (pointer) => onCheckClick(pointer));
+    this.checkButtonText.setInteractive({ useHandCursor: true })
+      .on("pointerdown", (pointer) => onCheckClick(pointer))
+      .on("pointerup", (pointer) => onCheckClick(pointer));
   }
 
   setupKeyboard() {
