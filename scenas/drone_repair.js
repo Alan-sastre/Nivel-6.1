@@ -477,7 +477,7 @@ class DroneRepairScene extends Phaser.Scene {
           if (this.isMobile) {
             // Crear input HTML real con mejor posicionamiento
             this.htmlInput = document.createElement("input");
-            this.htmlInput.type = "text";
+            this.htmlInput.type = "tel"; // Cambiar a tel para mejor compatibilidad móvil
             this.htmlInput.style.position = "absolute";
             this.htmlInput.style.left = this.editorX + 60 + inputX + 4 + "px";
             this.htmlInput.style.top = this.editorY + 20 + y + 3 + "px";
@@ -493,10 +493,17 @@ class DroneRepairScene extends Phaser.Scene {
             this.htmlInput.style.caretColor = "#ffffff";
             this.htmlInput.style.pointerEvents = "auto";
             this.htmlInput.style.touchAction = "manipulation";
+            // Mejorar la visibilidad para dispositivos móviles
+            this.htmlInput.style.backgroundColor = "rgba(38, 79, 120, 0.8)";
+            this.htmlInput.style.borderRadius = "4px";
+            this.htmlInput.style.padding = "0 4px";
 
             // Agregar atributos para móviles
             this.htmlInput.setAttribute("inputmode", "numeric");
             this.htmlInput.setAttribute("pattern", "[0-9]*");
+            this.htmlInput.setAttribute("autocomplete", "off");
+            this.htmlInput.setAttribute("autofocus", "true");
+            this.htmlInput.setAttribute("enterkeyhint", "done");
 
             // Agregar al DOM
             document.body.appendChild(this.htmlInput);
@@ -518,6 +525,29 @@ class DroneRepairScene extends Phaser.Scene {
             this.htmlInput.addEventListener("focus", () => {
               console.log("Input HTML enfocado - teclado debería abrirse");
             });
+            
+            // Forzar el enfoque y la apertura del teclado
+            setTimeout(() => {
+              this.htmlInput.focus();
+              this.htmlInput.click();
+              // Forzar la apertura del teclado virtual
+              if (navigator.userAgent.match(/Android/i)) {
+                this.htmlInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+              } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                this.htmlInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+              }
+            }, 300);
+            
+            // Agregar eventos de toque específicos para móviles
+            this.htmlInput.addEventListener("touchstart", (e) => {
+              e.stopPropagation();
+              this.htmlInput.focus();
+            });
+            
+            this.htmlInput.addEventListener("touchend", (e) => {
+              e.stopPropagation();
+              this.htmlInput.focus();
+            });
 
             // Hacer el input interactivo con Phaser - área más grande
             const inputArea = this.add
@@ -538,7 +568,19 @@ class DroneRepairScene extends Phaser.Scene {
               // Forzar el foco después de un pequeño delay
               setTimeout(() => {
                 this.htmlInput.focus();
+                // Forzar la apertura del teclado virtual
+                if (navigator.userAgent.match(/Android/i)) {
+                  this.htmlInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+                } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                  this.htmlInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+                }
               }, 100);
+              
+              // Segundo intento con un delay mayor
+              setTimeout(() => {
+                this.htmlInput.focus();
+                this.htmlInput.click();
+              }, 500);
             });
 
             // También hacer el fondo del input interactivo
@@ -548,6 +590,12 @@ class DroneRepairScene extends Phaser.Scene {
               this.htmlInput.focus();
               setTimeout(() => {
                 this.htmlInput.focus();
+                // Forzar la apertura del teclado virtual
+                if (navigator.userAgent.match(/Android/i)) {
+                  this.htmlInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+                } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+                  this.htmlInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+                }
               }, 100);
             });
 
@@ -580,7 +628,25 @@ class DroneRepairScene extends Phaser.Scene {
 
             keyboardButton.on("pointerdown", () => {
               console.log("Botón de teclado tocado");
-              this.showMobileInputModal();
+              // Asegurar que cualquier input anterior esté cerrado
+              if (this.htmlInput) {
+                this.htmlInput.blur();
+              }
+              // Pequeño delay antes de mostrar el modal
+              setTimeout(() => {
+                this.showMobileInputModal();
+              }, 50);
+            });
+            
+            // Agregar un evento de toque adicional para dispositivos móviles
+            keyboardButton.on("pointerup", () => {
+              // Este evento adicional ayuda en algunos dispositivos
+              setTimeout(() => {
+                if (this.htmlInput) {
+                  this.htmlInput.blur();
+                }
+                this.showMobileInputModal();
+              }, 100);
             });
           } else {
             // En desktop, usar el sistema original
@@ -1096,6 +1162,10 @@ class DroneRepairScene extends Phaser.Scene {
     this.hiddenInput.style.pointerEvents = "none";
     this.hiddenInput.setAttribute("inputmode", "numeric");
     this.hiddenInput.setAttribute("pattern", "[0-9]*");
+    // Agregar autocomplete para mejorar compatibilidad
+    this.hiddenInput.setAttribute("autocomplete", "off");
+    // Agregar autofocus para forzar el teclado
+    this.hiddenInput.setAttribute("autofocus", "true");
 
     document.body.appendChild(this.hiddenInput);
 
@@ -1103,11 +1173,23 @@ class DroneRepairScene extends Phaser.Scene {
     this.time.delayedCall(500, () => {
       this.hiddenInput.focus();
       this.hiddenInput.click();
+      // Forzar la apertura del teclado virtual
+      if (navigator.userAgent.match(/Android/i)) {
+        this.hiddenInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+        this.hiddenInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+      }
     });
 
     // También activar cuando se toque la pantalla
     this.input.on("pointerdown", () => {
       this.hiddenInput.focus();
+      // Forzar la apertura del teclado virtual
+      if (navigator.userAgent.match(/Android/i)) {
+        this.hiddenInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+        this.hiddenInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+      }
     });
 
     // Agregar evento global para cualquier toque
@@ -1116,6 +1198,12 @@ class DroneRepairScene extends Phaser.Scene {
       () => {
         if (this.hiddenInput) {
           this.hiddenInput.focus();
+          // Forzar la apertura del teclado virtual
+          if (navigator.userAgent.match(/Android/i)) {
+            this.hiddenInput.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+          } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+            this.hiddenInput.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+          }
         }
       },
       { once: true }
@@ -1197,12 +1285,24 @@ class DroneRepairScene extends Phaser.Scene {
       input.focus();
       input.click();
       input.select();
+      // Forzar la apertura del teclado virtual
+      if (navigator.userAgent.match(/Android/i)) {
+        input.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+        input.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+      }
     }, 100);
 
     // Intentar enfocar nuevamente después de un delay más largo
     setTimeout(() => {
       input.focus();
       input.click();
+      // Segundo intento de forzar la apertura del teclado
+      if (navigator.userAgent.match(/Android/i)) {
+        input.dispatchEvent(new TouchEvent('touchstart', {bubbles: true}));
+      } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+        input.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+      }
     }, 500);
 
     // Eventos
