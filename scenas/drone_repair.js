@@ -1,3 +1,4 @@
+// Definir la clase y exportarla como variable global
 class DroneRepairScene extends Phaser.Scene {
   constructor() {
     super({ key: "DroneRepairScene" });
@@ -1147,7 +1148,6 @@ class DroneRepairScene extends Phaser.Scene {
       this.input.mouse.enabled = true;
     }
   }
-  }
 
   createMobileInput() {
     // Crear opciones de respuesta para móviles
@@ -1710,3 +1710,6 @@ class DroneRepairScene extends Phaser.Scene {
     this.input.keyboard.off("keydown");
   }
 }
+
+// Exportar la clase como variable global para que esté disponible en game.js
+window.DroneRepairScene = DroneRepairScene;
