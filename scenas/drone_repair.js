@@ -304,38 +304,30 @@ class DroneRepairScene extends Phaser.Scene {
       }
     });
 
-    this.hintButton.on("pointerdown", (pointer, localX, localY, event) => {
-      // Prevenir comportamientos por defecto en móviles
-      if (event && event.preventDefault) {
-        event.preventDefault();
-      }
-      if (event && event.stopPropagation) {
-        event.stopPropagation();
-      }
-      
+    // Función para manejar el clic en el botón de pista
+    const onHintClick = (pointer) => {
       // Efecto visual inmediato
       this.hintButton.setFillStyle(0xf59e0b);
       this.hintButtonText.setScale(0.95);
-    });
-
-    this.hintButton.on("pointerup", (pointer, localX, localY, event) => {
-      // Prevenir comportamientos por defecto en móviles
-      if (event && event.preventDefault) {
-        event.preventDefault();
-      }
-      if (event && event.stopPropagation) {
-        event.stopPropagation();
-      }
       
       console.log("Botón Pista clickeado!");
       
-      // Restaurar apariencia
-      this.hintButton.setFillStyle(0xfbbf24);
-      this.hintButtonText.setScale(1);
+      // Restaurar apariencia después de un breve retraso
+      this.time.delayedCall(150, () => {
+        this.hintButton.setFillStyle(0xfbbf24);
+        this.hintButtonText.setScale(1);
+      });
       
       // Ejecutar acción
       this.showHint();
-    });
+    };
+    
+    // Asignar manejadores de eventos
+    this.hintButton.on("pointerdown", (pointer) => onHintClick(pointer));
+    this.hintButton.on("pointerup", (pointer) => onHintClick(pointer));
+    this.hintButtonText.setInteractive({ useHandCursor: true })
+      .on("pointerdown", (pointer) => onHintClick(pointer))
+      .on("pointerup", (pointer) => onHintClick(pointer));
 
     // Botón de comprobar usando Phaser
     this.checkButton = this.add
@@ -381,38 +373,30 @@ class DroneRepairScene extends Phaser.Scene {
       }
     });
 
-    this.checkButton.on("pointerdown", (pointer, localX, localY, event) => {
-      // Prevenir comportamientos por defecto en móviles
-      if (event && event.preventDefault) {
-        event.preventDefault();
-      }
-      if (event && event.stopPropagation) {
-        event.stopPropagation();
-      }
-      
+    // Función para manejar el clic en el botón de comprobar
+    const onCheckClick = (pointer) => {
       // Efecto visual inmediato
       this.checkButton.setFillStyle(0x16a34a);
       this.checkButtonText.setScale(0.95);
-    });
-
-    this.checkButton.on("pointerup", (pointer, localX, localY, event) => {
-      // Prevenir comportamientos por defecto en móviles
-      if (event && event.preventDefault) {
-        event.preventDefault();
-      }
-      if (event && event.stopPropagation) {
-        event.stopPropagation();
-      }
       
       console.log("Botón Comprobar clickeado!");
       
-      // Restaurar apariencia
-      this.checkButton.setFillStyle(0x22c55e);
-      this.checkButtonText.setScale(1);
+      // Restaurar apariencia después de un breve retraso
+      this.time.delayedCall(150, () => {
+        this.checkButton.setFillStyle(0x22c55e);
+        this.checkButtonText.setScale(1);
+      });
       
       // Ejecutar acción
       this.checkAnswer();
-    });
+    };
+    
+    // Asignar manejadores de eventos
+    this.checkButton.on("pointerdown", (pointer) => onCheckClick(pointer));
+    this.checkButton.on("pointerup", (pointer) => onCheckClick(pointer));
+    this.checkButtonText.setInteractive({ useHandCursor: true })
+      .on("pointerdown", (pointer) => onCheckClick(pointer))
+      .on("pointerup", (pointer) => onCheckClick(pointer));
   }
 
   setupKeyboard() {
