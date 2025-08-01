@@ -61,8 +61,7 @@ class DroneRepairScene extends Phaser.Scene {
 
   create() {
     // Configuración básica
-    this.gameWidth = this.cameras.main.width;
-    this.gameHeight = this.cameras.main.height;
+    this.updateDimensions();
     this.cameras.main.setRoundPixels(true);
 
     // Detectar si es móvil
@@ -77,6 +76,9 @@ class DroneRepairScene extends Phaser.Scene {
     // Detectar plataforma para optimizaciones específicas
     this.isAndroid = navigator.userAgent.match(/Android/i) ? true : false;
     this.isIOS = navigator.userAgent.match(/iPhone|iPad|iPod/i) ? true : false;
+
+    // Agregar listener para cambios de orientación
+    this.setupOrientationListener();
 
     // Habilitar input para toda la escena
     this.input.setDefaultCursor("pointer");
@@ -157,6 +159,164 @@ class DroneRepairScene extends Phaser.Scene {
         this.createMobileInput();
       });
     }
+  }
+
+  updateDimensions() {
+    this.gameWidth = this.cameras.main.width;
+    this.gameHeight = this.cameras.main.height;
+  }
+
+  setupOrientationListener() {
+    // Listener para cambios de orientación
+    const handleOrientationChange = () => {
+      // Esperar un poco para que la orientación se complete
+      setTimeout(() => {
+        this.handleOrientationChange();
+      }, 100);
+    };
+
+    // Agregar listeners para diferentes eventos de orientación
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
+    
+    // Guardar referencia para poder removerlos después
+    this.orientationChangeHandler = handleOrientationChange;
+  }
+
+  handleOrientationChange() {
+    console.log('Orientación cambiada, recalculando posiciones...');
+    
+    // Actualizar dimensiones
+    this.updateDimensions();
+    
+    // Recalcular posiciones de elementos
+    this.repositionElements();
+  }
+
+  repositionElements() {
+    // Reposicionar el editor de código
+    if (this.editorBg) {
+      // Recalcular posiciones del editor
+      if (this.isMobile) {
+        this.editorX = this.gameWidth * 0.45;
+        this.editorY = 60;
+        this.editorWidth = this.gameWidth * 0.5;
+        this.editorHeight = this.gameHeight * 0.65;
+      } else {
+        this.editorX = this.gameWidth * 0.55;
+        this.editorY = 70;
+        this.editorWidth = this.gameWidth * 0.4;
+        this.editorHeight = this.gameHeight * 0.6;
+      }
+
+      // Actualizar fondo del editor
+      this.editorBg.clear()
+        .fillStyle(0x1e1e1e, 0.95)
+        .fillRoundedRect(
+          this.editorX,
+          this.editorY,
+          this.editorWidth,
+          this.editorHeight,
+          8
+        )
+        .lineStyle(1, 0x3c3c3c, 1)
+        .strokeRoundedRect(
+          this.editorX,
+          this.editorY,
+          this.editorWidth,
+          this.editorHeight,
+          8
+        );
+
+      // Reposicionar contenedores
+      if (this.lineNumbersContainer) {
+        this.lineNumbersContainer.x = this.editorX + 15;
+        this.lineNumbersContainer.y = this.editorY + 20;
+      }
+      
+      if (this.codeContainer) {
+        this.codeContainer.x = this.editorX + 60;
+        this.codeContainer.y = this.editorY + 20;
+      }
+    }
+
+    // Reposicionar botones
+    this.repositionButtons();
+    
+    // Reposicionar título y progreso
+    if (this.progressText) {
+      this.progressText.x = this.gameWidth - 50;
+    }
+    
+    // Reposicionar título del ejercicio
+    if (this.exerciseTitle) {
+      this.exerciseTitle.x = this.gameWidth / 2;
+    }
+    
+    // Reposicionar opciones móviles si están visibles
+    if (this.mobileInputContainer) {
+      this.mobileInputContainer.x = this.gameWidth * 0.25;
+      this.mobileInputContainer.y = this.gameHeight * 0.75;
+      
+      // También actualizar botones HTML si existen
+      const htmlButtons = document.querySelectorAll('.mobile-option-button');
+      htmlButtons.forEach((button, index) => {
+        button.style.left = `${this.gameWidth * 0.25 + (index - 1.5) * 70 - 30}px`;
+        button.style.top = `${this.gameHeight * 0.75 + 10 - 20}px`;
+      });
+    }
+    
+    // Actualizar input display si existe
+    if (this.inputBg) {
+      this.updateInputDisplay();
+    }
+    
+    // Reposicionar el dron
+    if (this.drone) {
+      const droneX = this.isMobile ? 80 : 120;
+      // Solo actualizar X, mantener Y actual para no interrumpir animaciones
+      if (!this.tweens.isTweening(this.drone)) {
+        this.drone.x = droneX;
+      }
+    }
+  }
+
+  repositionButtons() {
+    if (!this.hintButton || !this.checkButton) return;
+    
+    // Recalcular posiciones de botones
+    const buttonWidth = this.isMobile ? 140 : 160;
+    const buttonHeight = this.isMobile ? 50 : 45;
+    const buttonSpacing = this.isMobile ? 15 : 20;
+    const buttonY = this.editorY + this.editorHeight + 20;
+    const editorCenterX = this.editorX + this.editorWidth / 2;
+    const hintButtonX = editorCenterX - buttonWidth - buttonSpacing / 2;
+    const checkButtonX = editorCenterX + buttonSpacing / 2;
+
+    // Reposicionar botón de pista
+    this.hintButton.x = hintButtonX + buttonWidth / 2;
+    this.hintButton.y = buttonY + buttonHeight / 2;
+    
+    if (this.hintButtonText) {
+      this.hintButtonText.x = hintButtonX + buttonWidth / 2;
+      this.hintButtonText.y = buttonY + buttonHeight / 2;
+    }
+
+    // Reposicionar botón de comprobar
+    this.checkButton.x = checkButtonX + buttonWidth / 2;
+    this.checkButton.y = buttonY + buttonHeight / 2;
+    
+    if (this.checkButtonText) {
+      this.checkButtonText.x = checkButtonX + buttonWidth / 2;
+      this.checkButtonText.y = buttonY + buttonHeight / 2;
+    }
+    
+    console.log('Botones reposicionados:', {
+      hintButton: { x: this.hintButton.x, y: this.hintButton.y },
+      checkButton: { x: this.checkButton.x, y: this.checkButton.y },
+      gameWidth: this.gameWidth,
+      gameHeight: this.gameHeight
+    });
   }
 
   setupMinimalUI() {
@@ -774,6 +934,10 @@ class DroneRepairScene extends Phaser.Scene {
     // En desktop, actualizar texto y cursor
     if (!this.isMobile && this.inputTextObj) {
       this.inputTextObj.setText(this.inputText);
+      
+      // Actualizar posición del texto del input
+      this.inputTextObj.x = this.editorX + 60 + this.inputX + 4;
+      this.inputTextObj.y = this.editorY + 20 + this.inputY + 3;
 
       // Actualizar posición del cursor
       if (this.cursor) {
@@ -1400,6 +1564,17 @@ class DroneRepairScene extends Phaser.Scene {
     if (this.optionsButton) {
       this.optionsButton = null;
     }
+
+    // Limpiar listeners de orientación
+    if (this.orientationChangeHandler) {
+      window.removeEventListener('orientationchange', this.orientationChangeHandler);
+      window.removeEventListener('resize', this.orientationChangeHandler);
+      this.orientationChangeHandler = null;
+    }
+
+    // Limpiar botones HTML móviles
+    const htmlButtons = document.querySelectorAll('.mobile-option-button');
+    htmlButtons.forEach((btn) => btn.remove());
 
     // Limpiar el teclado
     this.input.keyboard.off("keydown");
