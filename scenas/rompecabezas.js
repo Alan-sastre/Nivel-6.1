@@ -124,8 +124,8 @@ class Rompecabezas extends Phaser.Scene {
             fill: '#b8d4f8'
         });
 
-        // Indicador de estado con tono cálido
-        this.statusIndicator = this.add.circle(panelX + panelWidth - 15, panelY - 15, 5, 0xff6b6b);
+        // Indicador de estado eliminado
+        // this.statusIndicator = this.add.circle(panelX + panelWidth - 15, panelY - 15, 5, 0xff6b6b);
 
         // Mostrar código línea por línea (todas clickeables)
         this.codeTexts = [];
@@ -396,7 +396,7 @@ class Rompecabezas extends Phaser.Scene {
 
         // Actualizar estado de errores
         this.errorsLeft = this.errors.length;
-        this.statusIndicator.setFillStyle(0xff6b6b);
+        // this.statusIndicator.setFillStyle(0xff6b6b); // Indicador eliminado
     }
 
     createSuccessEffect(target) {
@@ -471,8 +471,8 @@ class Rompecabezas extends Phaser.Scene {
         this.jarvisStatus.setText('✅ SISTEMA REPARADO');
         this.jarvisStatus.setStyle({ fill: '#00ff00' });
 
-        // Actualizar indicador
-        this.statusIndicator.setFillStyle(0x00ff00);
+        // Actualizar indicador (eliminado)
+        // this.statusIndicator.setFillStyle(0x00ff00);
 
         // Efecto de reparación completa
         this.createRepairEffect();
