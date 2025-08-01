@@ -95,7 +95,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Dron más grande - empieza rojo (ajustado para móviles)
     const droneX = this.isMobile ? 80 : 120;
-    const droneScale = this.isMobile ? 0.5 : 0.6; // Dron más grande
+    const droneScale = this.isMobile ? 0.8 : 0.9; // Dron más grande
 
     this.drone = this.add
       .image(droneX, this.gameHeight / 2, "drone_red")
