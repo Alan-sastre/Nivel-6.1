@@ -58,14 +58,24 @@ class DroneRepairScene extends Phaser.Scene {
     this.load.image("drone_red", "assets/drones/1.png");
     this.load.image("drone_green", "assets/drones/1.png");
     
-    // Cargar imagen para el sistema de partículas
-    // Si no existe, creamos una partícula básica en tiempo de ejecución
-    this.load.image("particle", "assets/particle.png");
+    // Intentar cargar solo el formato SVG de partículas
+    this.load.image("particle", "assets/particle.svg");
     
     // Manejador de error para crear partícula por defecto si no se encuentra el archivo
     this.load.once('loaderror', (fileObj) => {
       if (fileObj.key === 'particle') {
+        console.log('Error al cargar la imagen de partículas SVG, creando partícula por defecto');
         this.createDefaultParticle();
+      }
+    });
+    
+    // Verificar si la imagen se cargó correctamente
+    this.load.once('complete', () => {
+      if (!this.textures.exists('particle')) {
+        console.log('La imagen de partículas no se cargó, creando partícula por defecto');
+        this.createDefaultParticle();
+      } else {
+        console.log('Imagen SVG de partículas cargada correctamente');
       }
     });
   }
@@ -94,6 +104,8 @@ class DroneRepairScene extends Phaser.Scene {
     const texture = this.textures.createCanvas('particle', size, size);
     texture.draw(0, 0, canvas);
     texture.refresh();
+    
+    console.log('Partícula por defecto creada correctamente');
   }
 
   create() {
@@ -1427,11 +1439,11 @@ class DroneRepairScene extends Phaser.Scene {
             quantity: 1,
             lifespan: 800,
             emitting: false,
-            frame: [ 0, 1, 2, 3 ],
             tint: [ 0x4ade80, 0x22c55e, 0xffffff ]
           });
           optionsContainer.add(particles);
           particles.explode(20);
+          console.log('Partículas de celebración creadas');
 
           this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
 
@@ -1913,11 +1925,11 @@ class DroneRepairScene extends Phaser.Scene {
           quantity: 1,
           lifespan: 800,
           emitting: false,
-          frame: [ 0, 1, 2, 3 ],
           tint: [ 0x4ade80, 0x22c55e, 0xffffff ]
         });
         this.rotateMessage.add(particles);
         particles.explode(15);
+        console.log('Partículas de rotación creadas');
         
         // Ocultar mensaje
         this.hideRotateMessage();
