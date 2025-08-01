@@ -57,6 +57,43 @@ class DroneRepairScene extends Phaser.Scene {
     this.load.image("drone_working", "assets/drones/1.png");
     this.load.image("drone_red", "assets/drones/1.png");
     this.load.image("drone_green", "assets/drones/1.png");
+    
+    // Cargar imagen para el sistema de partículas
+    // Si no existe, creamos una partícula básica en tiempo de ejecución
+    this.load.image("particle", "assets/particle.png");
+    
+    // Manejador de error para crear partícula por defecto si no se encuentra el archivo
+    this.load.once('loaderror', (fileObj) => {
+      if (fileObj.key === 'particle') {
+        this.createDefaultParticle();
+      }
+    });
+  }
+  
+  // Crear una partícula por defecto si no se encuentra el archivo
+  createDefaultParticle() {
+    // Crear un canvas para la partícula
+    const size = 32;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    // Dibujar un círculo blanco con degradado
+    const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.5, 'rgba(200, 200, 255, 0.5)');
+    gradient.addColorStop(1, 'rgba(100, 100, 255, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Crear textura a partir del canvas
+    const texture = this.textures.createCanvas('particle', size, size);
+    texture.draw(0, 0, canvas);
+    texture.refresh();
   }
 
   create() {
@@ -1323,31 +1360,50 @@ class DroneRepairScene extends Phaser.Scene {
       .setDepth(201);
     optionsContainer.add(title);
 
-    // Crear botones de opciones (1 fila de 4) más pequeños
+    // Crear botones de opciones (1 fila de 4) con diseño mejorado
     options.slice(0, 4).forEach((option, index) => {
       const x = (index - 1.5) * 70; // 4 opciones en una fila horizontal
       const y = 10; // Debajo del título
 
-      // Crear botón como rectángulo simple
-      const button = this.add.rectangle(x, y, 60, 40, 0x3b82f6);
-      button.setInteractive();
-      button.setDepth(201);
+      // Crear botón con diseño más moderno
+      // Primero un fondo con sombra para efecto 3D
+      const buttonShadow = this.add.graphics()
+        .fillStyle(0x1e293b, 0.7)
+        .fillRoundedRect(x - 32, y - 22 + 3, 64, 44, 10)
+        .setDepth(201);
+      optionsContainer.add(buttonShadow);
+      
+      // Luego el botón principal con gradiente
+      const button = this.add.graphics()
+        .fillStyle(0x3b82f6, 1)
+        .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
+        .lineStyle(2, 0x60a5fa, 1)
+        .strokeRoundedRect(x - 32, y - 22, 64, 44, 10)
+        .setDepth(201);
+      
+      // Crear un área interactiva sobre el botón
+      const hitArea = this.add.rectangle(x, y, 64, 44, 0xffffff, 0);
+      hitArea.setInteractive();
+      hitArea.setDepth(201);
 
-      // Crear el texto del botón
+      // Crear el texto del botón con estilo mejorado
       const buttonText = this.add
         .text(x, y, option.toString(), {
           fontFamily: "Arial",
-          fontSize: "16px",
+          fontSize: "18px",
           color: "#ffffff",
           stroke: "#000000",
           strokeThickness: 2,
+          fontWeight: "bold"
         })
         .setOrigin(0.5)
         .setDepth(202);
 
       // Agregar al contenedor
       optionsContainer.add(button);
+      optionsContainer.add(buttonShadow);
       optionsContainer.add(buttonText);
+      optionsContainer.add(hitArea);
 
       // Función para manejar la respuesta
       const handleAnswer = () => {
@@ -1355,8 +1411,27 @@ class DroneRepairScene extends Phaser.Scene {
 
         if (option.toString() === correctAnswer) {
           console.log("¡Correcto!");
-          button.setFillStyle(0x22c55e);
-          buttonText.setText("✅ " + option.toString());
+          // Actualizar el botón a verde para respuesta correcta
+          button.clear()
+            .fillStyle(0x22c55e, 1)
+            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
+            .lineStyle(2, 0x4ade80, 1)
+            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
+            
+          buttonText.setText("✅");
+          
+          // Añadir efecto de partículas para celebración
+          const particles = this.add.particles(x, y, 'particle', {
+            speed: { min: 50, max: 100 },
+            scale: { start: 0.2, end: 0 },
+            quantity: 1,
+            lifespan: 800,
+            emitting: false,
+            frame: [ 0, 1, 2, 3 ],
+            tint: [ 0x4ade80, 0x22c55e, 0xffffff ]
+          });
+          optionsContainer.add(particles);
+          particles.explode(20);
 
           this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
 
@@ -1369,8 +1444,14 @@ class DroneRepairScene extends Phaser.Scene {
           });
         } else {
           console.log("Incorrecto");
-          button.setFillStyle(0xef4444);
-          buttonText.setText("❌ " + option.toString());
+          // Actualizar el botón a rojo para respuesta incorrecta
+          button.clear()
+            .fillStyle(0xef4444, 1)
+            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
+            .lineStyle(2, 0xf87171, 1)
+            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
+            
+          buttonText.setText("❌");
 
           this.showMessage(
             "Incorrecto. Inténtalo de nuevo.",
@@ -1379,15 +1460,35 @@ class DroneRepairScene extends Phaser.Scene {
             1000
           );
 
+          // Efecto de vibración para respuesta incorrecta
+          this.tweens.add({
+            targets: [button, buttonText],
+            x: { from: x - 5, to: x + 5 },
+            duration: 50,
+            repeat: 3,
+            yoyo: true,
+            ease: 'Sine.easeInOut',
+            onComplete: () => {
+              button.x = x;
+              buttonText.x = x;
+            }
+          });
+
           this.time.delayedCall(1000, () => {
-            button.setFillStyle(0x3b82f6);
+            // Restaurar el botón a su estado original
+            button.clear()
+              .fillStyle(0x3b82f6, 1)
+              .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
+              .lineStyle(2, 0x60a5fa, 1)
+              .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
+              
             buttonText.setText(option.toString());
           });
         }
       };
 
-      // Eventos optimizados para móviles
-      button.on("pointerdown", (pointer, localX, localY, event) => {
+      // Eventos optimizados para móviles y desktop
+      hitArea.on("pointerdown", (pointer, localX, localY, event) => {
         // Prevenir comportamientos por defecto
         if (event && event.preventDefault) {
           event.preventDefault();
@@ -1396,12 +1497,18 @@ class DroneRepairScene extends Phaser.Scene {
           event.stopPropagation();
         }
         
-        // Efecto visual inmediato
-        button.setFillStyle(0x1d4ed8);
+        // Efecto visual inmediato - botón presionado
+        button.clear()
+          .fillStyle(0x1d4ed8, 1)
+          .fillRoundedRect(x - 32, y - 22 + 2, 64, 44, 10) // Mover ligeramente hacia abajo
+          .lineStyle(2, 0x60a5fa, 1)
+          .strokeRoundedRect(x - 32, y - 22 + 2, 64, 44, 10);
+        
         buttonText.setScale(0.95);
+        buttonText.y = y + 2; // Mover texto hacia abajo
       });
       
-      button.on("pointerup", (pointer, localX, localY, event) => {
+      hitArea.on("pointerup", (pointer, localX, localY, event) => {
         // Prevenir comportamientos por defecto
         if (event && event.preventDefault) {
           event.preventDefault();
@@ -1411,22 +1518,54 @@ class DroneRepairScene extends Phaser.Scene {
         }
         
         // Restaurar apariencia
-        button.setFillStyle(0x3b82f6);
+        button.clear()
+          .fillStyle(0x3b82f6, 1)
+          .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
+          .lineStyle(2, 0x60a5fa, 1)
+          .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
+        
         buttonText.setScale(1);
+        buttonText.y = y; // Restaurar posición del texto
         
         // Ejecutar acción
         handleAnswer();
       });
       
-      button.on("pointerover", () => {
+      hitArea.on("pointerover", () => {
         if (!this.isMobile) {
-          button.setFillStyle(0x2563eb);
+          // Efecto de brillo al pasar el mouse
+          button.clear()
+            .fillStyle(0x2563eb, 1)
+            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
+            .lineStyle(3, 0x93c5fd, 1) // Borde más brillante
+            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
+          
+          // Añadir un ligero efecto de escala
+          this.tweens.add({
+            targets: buttonText,
+            scale: 1.05,
+            duration: 100,
+            ease: 'Sine.easeOut'
+          });
         }
       });
       
-      button.on("pointerout", () => {
+      hitArea.on("pointerout", () => {
         if (!this.isMobile) {
-          button.setFillStyle(0x3b82f6);
+          // Restaurar apariencia normal
+          button.clear()
+            .fillStyle(0x3b82f6, 1)
+            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
+            .lineStyle(2, 0x60a5fa, 1)
+            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
+          
+          // Restaurar escala normal
+          this.tweens.add({
+            targets: buttonText,
+            scale: 1,
+            duration: 100,
+            ease: 'Sine.easeOut'
+          });
         }
       });
     });
@@ -1475,33 +1614,114 @@ class DroneRepairScene extends Phaser.Scene {
       console.log("Elementos en contenedor:", buttons.length);
     }, 100);
 
-    // Crear botones HTML como respaldo
+    // Crear botones HTML como respaldo con diseño mejorado
     options.slice(0, 4).forEach((option, index) => {
       const button = document.createElement("button");
       button.className = "mobile-option-button";
       button.textContent = option.toString();
       button.style.cssText = `
         position: absolute;
-        left: ${this.gameWidth * 0.25 + (index - 1.5) * 70 - 30}px;
-        top: ${this.gameHeight * 0.75 + 10 - 20}px;
-        width: 60px;
-        height: 40px;
-        background: #3b82f6;
+        left: ${this.gameWidth * 0.25 + (index - 1.5) * 70 - 32}px;
+        top: ${this.gameHeight * 0.75 + 10 - 22}px;
+        width: 64px;
+        height: 44px;
+        background: linear-gradient(to bottom, #4f8bf9, #3b82f6);
         color: white;
         border: none;
-        border-radius: 5px;
-        font-size: 16px;
+        border-radius: 10px;
+        font-size: 18px;
         font-weight: bold;
         z-index: 1000;
         cursor: pointer;
+        box-shadow: 0 3px 0 #1d4ed8, 0 4px 6px rgba(0, 0, 0, 0.4);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        transition: all 0.1s ease;
+        outline: none;
+        border: 2px solid #60a5fa;
       `;
 
+      // Añadir efectos visuales al botón HTML
+      button.onmousedown = button.ontouchstart = () => {
+        button.style.transform = 'translateY(3px)';
+        button.style.boxShadow = '0 0 0 #1d4ed8, 0 1px 2px rgba(0, 0, 0, 0.4)';
+      };
+      
+      button.onmouseup = button.onmouseleave = button.ontouchend = () => {
+        button.style.transform = 'translateY(0)';
+        button.style.boxShadow = '0 3px 0 #1d4ed8, 0 4px 6px rgba(0, 0, 0, 0.4)';
+      };
+      
+      // Efecto hover para desktop
+      if (!this.isMobile) {
+        button.onmouseover = () => {
+          button.style.background = 'linear-gradient(to bottom, #60a5fa, #4f8bf9)';
+          button.style.transform = 'translateY(-2px)';
+          button.style.boxShadow = '0 5px 0 #1d4ed8, 0 6px 8px rgba(0, 0, 0, 0.4)';
+        };
+        
+        button.onmouseout = () => {
+          button.style.background = 'linear-gradient(to bottom, #4f8bf9, #3b82f6)';
+          button.style.transform = 'translateY(0)';
+          button.style.boxShadow = '0 3px 0 #1d4ed8, 0 4px 6px rgba(0, 0, 0, 0.4)';
+        };
+      }
+      
+      // Manejar clic/toque
       button.onclick = () => {
         console.log("Botón HTML tocado:", option.toString());
         if (option.toString() === correctAnswer) {
           console.log("¡Correcto!");
-          button.style.background = "#22c55e";
-          button.textContent = "✅ " + option.toString();
+          // Efecto visual para respuesta correcta
+          button.style.background = "linear-gradient(to bottom, #22c55e, #16a34a)";
+          button.style.borderColor = "#4ade80";
+          button.style.boxShadow = "0 0 10px rgba(74, 222, 128, 0.5)";
+          button.textContent = "✅";
+          
+          // Añadir efecto de confeti con CSS
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti-container';
+          confetti.style.cssText = `
+            position: absolute;
+            left: ${button.offsetLeft + button.offsetWidth/2}px;
+            top: ${button.offsetTop + button.offsetHeight/2}px;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            z-index: 1001;
+          `;
+          
+          // Crear partículas de confeti
+          for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.style.cssText = `
+              position: absolute;
+              width: 8px;
+              height: 8px;
+              background: ${['#4ade80', '#22c55e', '#ffffff'][Math.floor(Math.random() * 3)]};
+              border-radius: 50%;
+              transform: translate(-50%, -50%);
+              animation: confetti-fall 1s ease-out forwards;
+            `;
+            particle.style.left = '50%';
+            particle.style.top = '50%';
+            particle.style.animationDelay = `${Math.random() * 0.2}s`;
+            confetti.appendChild(particle);
+          }
+          
+          document.body.appendChild(confetti);
+          
+          // Añadir estilo para la animación si no existe
+          if (!document.getElementById('confetti-style')) {
+            const style = document.createElement('style');
+            style.id = 'confetti-style';
+            style.textContent = `
+              @keyframes confetti-fall {
+                0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                100% { transform: translate(${Math.random() > 0.5 ? '' : '-'}${Math.random() * 50 + 50}px, ${Math.random() * 50 + 50}px) scale(0); opacity: 0; }
+              }
+            `;
+            document.head.appendChild(style);
+          }
 
           this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
 
@@ -1511,13 +1731,38 @@ class DroneRepairScene extends Phaser.Scene {
             }
             const buttons = document.querySelectorAll(".mobile-option-button");
             buttons.forEach((btn) => btn.remove());
+            
+            // Eliminar confeti después de la animación
+            const confettis = document.querySelectorAll('.confetti-container');
+            confettis.forEach(c => c.remove());
+            
             this.inputText = correctAnswer;
             this.checkAnswer();
           }, 1500);
         } else {
           console.log("Incorrecto");
-          button.style.background = "#ef4444";
-          button.textContent = "❌ " + option.toString();
+          // Efecto visual para respuesta incorrecta
+          button.style.background = "linear-gradient(to bottom, #ef4444, #dc2626)";
+          button.style.borderColor = "#f87171";
+          button.textContent = "❌";
+          
+          // Efecto de vibración
+          const originalLeft = button.style.left;
+          const shake = () => {
+            const offset = 5;
+            let count = 0;
+            const interval = setInterval(() => {
+              if (count >= 6) {
+                clearInterval(interval);
+                button.style.left = originalLeft;
+                return;
+              }
+              
+              button.style.left = `calc(${originalLeft} ${count % 2 === 0 ? '+' : '-'} ${offset}px)`;
+              count++;
+            }, 50);
+          };
+          shake();
 
           this.showMessage(
             "Incorrecto. Inténtalo de nuevo.",
@@ -1527,7 +1772,8 @@ class DroneRepairScene extends Phaser.Scene {
           );
 
           setTimeout(() => {
-            button.style.background = "#3b82f6";
+            button.style.background = "linear-gradient(to bottom, #4f8bf9, #3b82f6)";
+            button.style.borderColor = "#60a5fa";
             button.textContent = option.toString();
           }, 1000);
         }
@@ -1591,39 +1837,87 @@ class DroneRepairScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     
-    // Botones de opciones de resolución
+    // Botones de opciones de resolución con diseño mejorado
     const resolutions = [750, 1250, 1500, 2000];
     const buttonWidth = 80;
+    const buttonHeight = 44;
     const buttonSpacing = 10;
     const totalWidth = resolutions.length * buttonWidth + (resolutions.length - 1) * buttonSpacing;
     let startX = -totalWidth / 2 + buttonWidth / 2;
     
     resolutions.forEach(resolution => {
-      // Crear botón
-      const button = this.add
-        .rectangle(startX, 50, buttonWidth, 40, 0x3b82f6)
-        .setInteractive({ useHandCursor: true });
+      // Crear sombra para efecto 3D
+      const buttonShadow = this.add.graphics()
+        .fillStyle(0x1e293b, 0.7)
+        .fillRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2 + 3, buttonWidth, buttonHeight, 10)
+        .setDepth(1001);
+      this.rotateMessage.add(buttonShadow);
       
-      // Texto del botón
+      // Crear botón con gradiente y borde
+      const button = this.add.graphics()
+        .fillStyle(0x3b82f6, 1)
+        .fillRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10)
+        .lineStyle(2, 0x60a5fa, 1)
+        .strokeRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10)
+        .setDepth(1001);
+      this.rotateMessage.add(button);
+      
+      // Crear área interactiva
+      const hitArea = this.add
+        .rectangle(startX, 50, buttonWidth, buttonHeight, 0xffffff, 0)
+        .setInteractive({ useHandCursor: true })
+        .setDepth(1002);
+      
+      // Texto del botón con estilo mejorado
       const buttonText = this.add
         .text(startX, 50, resolution.toString(), {
           fontFamily: "Arial",
           fontSize: "20px",
           color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 2,
+          fontWeight: "bold"
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(1002);
+      this.rotateMessage.add(buttonText);
       
-      // Eventos del botón
-      button.on("pointerdown", () => {
-        // Cambiar estilo al presionar
-        button.setFillStyle(0x1d4ed8);
+      // Eventos del botón con efectos visuales mejorados
+      hitArea.on("pointerdown", () => {
+        // Efecto visual al presionar
+        button.clear()
+          .fillStyle(0x1d4ed8, 1)
+          .fillRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2 + 2, buttonWidth, buttonHeight, 10)
+          .lineStyle(2, 0x60a5fa, 1)
+          .strokeRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2 + 2, buttonWidth, buttonHeight, 10);
+        
         buttonText.setScale(0.95);
+        buttonText.y = 50 + 2; // Mover texto hacia abajo
       });
       
-      button.on("pointerup", () => {
+      hitArea.on("pointerup", () => {
         // Restaurar estilo
-        button.setFillStyle(0x3b82f6);
+        button.clear()
+          .fillStyle(0x3b82f6, 1)
+          .fillRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10)
+          .lineStyle(2, 0x60a5fa, 1)
+          .strokeRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10);
+        
         buttonText.setScale(1);
+        buttonText.y = 50; // Restaurar posición del texto
+        
+        // Añadir efecto de partículas al seleccionar
+        const particles = this.add.particles(startX, 50, 'particle', {
+          speed: { min: 50, max: 100 },
+          scale: { start: 0.2, end: 0 },
+          quantity: 1,
+          lifespan: 800,
+          emitting: false,
+          frame: [ 0, 1, 2, 3 ],
+          tint: [ 0x4ade80, 0x22c55e, 0xffffff ]
+        });
+        this.rotateMessage.add(particles);
+        particles.explode(15);
         
         // Ocultar mensaje
         this.hideRotateMessage();
@@ -1634,9 +1928,42 @@ class DroneRepairScene extends Phaser.Scene {
         });
       });
       
+      hitArea.on("pointerover", () => {
+        // Efecto de brillo al pasar el mouse
+        button.clear()
+          .fillStyle(0x2563eb, 1)
+          .fillRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10)
+          .lineStyle(3, 0x93c5fd, 1) // Borde más brillante
+          .strokeRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10);
+        
+        // Añadir un ligero efecto de escala
+        this.tweens.add({
+          targets: buttonText,
+          scale: 1.05,
+          duration: 100,
+          ease: 'Sine.easeOut'
+        });
+      });
+      
+      hitArea.on("pointerout", () => {
+        // Restaurar apariencia normal
+        button.clear()
+          .fillStyle(0x3b82f6, 1)
+          .fillRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10)
+          .lineStyle(2, 0x60a5fa, 1)
+          .strokeRoundedRect(startX - buttonWidth/2, 50 - buttonHeight/2, buttonWidth, buttonHeight, 10);
+        
+        // Restaurar escala normal
+        this.tweens.add({
+          targets: buttonText,
+          scale: 1,
+          duration: 100,
+          ease: 'Sine.easeOut'
+        });
+      });
+      
       // Agregar al contenedor
-      this.rotateMessage.add(button);
-      this.rotateMessage.add(buttonText);
+      this.rotateMessage.add(hitArea);
       
       // Actualizar posición para el siguiente botón
       startX += buttonWidth + buttonSpacing;
