@@ -8,7 +8,7 @@ class DroneRepairScene extends Phaser.Scene {
     this.sliderMin = 0;
     this.sliderMax = 3000;
     this.sliderStep = 100;
-    
+
     this.exercises = [
       {
         title: "Ejercicio 1: Tiempo de encendido del LED",
@@ -93,9 +93,9 @@ class DroneRepairScene extends Phaser.Scene {
       .fillStyle(0x000000, 0.15)
       .fillRect(0, 0, this.gameWidth, this.gameHeight);
 
-    // Dron mucho más grande - empieza rojo (ajustado para móviles)
+    // Dron más grande - empieza rojo (ajustado para móviles)
     const droneX = this.isMobile ? 80 : 120;
-    const droneScale = this.isMobile ? 0.8 : 1.0; // Dron mucho más grande
+    const droneScale = this.isMobile ? 0.5 : 0.6; // Dron más grande
 
     this.drone = this.add
       .image(droneX, this.gameHeight / 2, "drone_red")
@@ -114,7 +114,7 @@ class DroneRepairScene extends Phaser.Scene {
       yoyo: true,
       ease: "Sine.easeInOut",
     });
-    
+
     // Crear barra deslizante debajo del dron
     this.createSlider();
 
@@ -383,7 +383,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     this.currentExercise = this.exercises[index];
     this.currentExerciseIndex = index;
-    
+
     // Actualizar la barra deslizante con los valores del ejercicio actual
     this.updateSliderForCurrentExercise();
 
@@ -846,7 +846,7 @@ class DroneRepairScene extends Phaser.Scene {
 
   checkAnswer() {
     if (!this.currentExercise) return;
-    
+
     // Eliminar mensaje anterior si existe para evitar que se quede en pantalla
     if (this.messageBox) {
       this.messageBox.destroy();
@@ -961,7 +961,7 @@ class DroneRepairScene extends Phaser.Scene {
       return;
     }
     console.log("Mostrando pista:", this.currentExercise.hint);
-    
+
     // Eliminar mensaje anterior si existe para evitar que se quede en pantalla
     if (this.messageBox) {
       this.messageBox.destroy();
@@ -969,7 +969,7 @@ class DroneRepairScene extends Phaser.Scene {
       this.messageBox = null;
       this.messageBg = null;
     }
-    
+
     this.showMessage(`💡 Pista: ${this.currentExercise.hint}`, "#fbbf24");
   }
 
@@ -1424,7 +1424,7 @@ class DroneRepairScene extends Phaser.Scene {
       this.mobileInputContainer.destroy();
       this.mobileInputContainer = null;
     }
-    
+
     // Limpiar la barra deslizante
     if (this.slider) {
       this.slider.destroy();
@@ -1438,139 +1438,128 @@ class DroneRepairScene extends Phaser.Scene {
     // Limpiar el teclado
     this.input.keyboard.off("keydown");
   }
-  
-  // Crear la barra deslizante debajo del dron con nuevo diseño
+
+  // Crear la barra deslizante debajo del dron
   createSlider() {
-    const sliderY = this.gameHeight / 2 + 120; // Posición más abajo
-    const sliderWidth = this.isMobile ? 280 : 400; // Barra más ancha
-    
-    // Fondo de la barra deslizante con nuevo diseño
-    const sliderTrack = this.add.rectangle(
-      120, // Alineado con el dron
-      sliderY,
-      sliderWidth,
-      16, // Más alta
-      0x222222, // Color más oscuro
-      0.9 // Más opaco
-    ).setOrigin(0, 0.5).setDepth(5);
-    
-    // Borde de la barra con nuevo diseño
-    this.add.graphics()
-      .lineStyle(3, 0xff5500, 1) // Naranja más llamativo y línea más gruesa
-      .strokeRoundedRect(120, sliderY - 8, sliderWidth, 16, 8) // Bordes redondeados
+    const sliderY = this.gameHeight / 2 + 100;
+    const sliderWidth = this.isMobile ? 200 : 300;
+
+    // Fondo de la barra deslizante
+    const sliderTrack = this.add
+      .rectangle(
+        120, // Alineado con el dron
+        sliderY,
+        sliderWidth,
+        10,
+        0x333333,
+        0.8
+      )
+      .setOrigin(0, 0.5)
+      .setDepth(5);
+
+    // Borde de la barra
+    this.add
+      .graphics()
+      .lineStyle(2, 0x007acc, 1)
+      .strokeRect(120, sliderY - 5, sliderWidth, 10)
       .setDepth(6);
-    
-    // Fondo degradado para la barra
-    const gradientGraphics = this.add.graphics().setDepth(5);
-    const gradient = gradientGraphics.createLinearGradient(
-      120, 0, 120 + sliderWidth, 0
-    );
-    gradient.addColorStop(0, '#330000');
-    gradient.addColorStop(0.5, '#660000');
-    gradient.addColorStop(1, '#990000');
-    gradientGraphics.fillStyle(gradient);
-    gradientGraphics.fillRoundedRect(120, sliderY - 8, sliderWidth, 16, 8);
-    
-    // Marcas de la barra (cada 500 unidades) con nuevo diseño
+
+    // Marcas de la barra (cada 500 unidades)
     for (let i = 0; i <= this.sliderMax; i += 500) {
       const x = 120 + (i / this.sliderMax) * sliderWidth;
-      
-      // Línea de marca más visible
-      this.add.line(0, 0, x, sliderY - 15, x, sliderY + 15, 0xffaa00, 0.8) // Color naranja y más visible
-        .setOrigin(0, 0).setDepth(6).setLineWidth(2); // Línea más gruesa
-      
-      // Texto de la marca más grande y visible
-      this.add.text(x, sliderY + 20, i.toString(), {
-        fontFamily: 'Arial',
-        fontSize: '14px', // Texto más grande
-        color: '#ffaa00', // Color naranja
-        stroke: '#000000',
-        strokeThickness: 2
-      }).setOrigin(0.5, 0).setDepth(6);
+
+      // Línea de marca
+      this.add
+        .line(0, 0, x, sliderY - 10, x, sliderY + 10, 0xffffff, 0.5)
+        .setOrigin(0, 0)
+        .setDepth(6);
+
+      // Texto de la marca
+      this.add
+        .text(x, sliderY + 15, i.toString(), {
+          fontFamily: "Arial",
+          fontSize: "12px",
+          color: "#ffffff",
+        })
+        .setOrigin(0.5, 0)
+        .setDepth(6);
     }
-    
-    // Control deslizante (thumb) con nuevo diseño
-    this.slider = this.add.circle( // Círculo en lugar de rectángulo
-      120,
-      sliderY,
-      18, // Más grande
-      0xffaa00 // Naranja
-    ).setOrigin(0.5, 0.5).setDepth(7)
+
+    // Control deslizante (thumb)
+    this.slider = this.add
+      .rectangle(120, sliderY, 20, 20, 0x007acc, 1)
+      .setOrigin(0.5, 0.5)
+      .setDepth(7)
       .setInteractive({ draggable: true, useHandCursor: true });
-      
-    // Borde del control deslizante
-    this.add.circle(
-      120,
-      sliderY,
-      18,
-      0xffffff
-    ).setOrigin(0.5, 0.5).setDepth(6).setAlpha(0.3);
-    
-    // Texto que muestra el valor actual con nuevo diseño
-    this.sliderText = this.add.text(
-      120 + sliderWidth / 2,
-      sliderY - 40, // Más separado
-      this.sliderValue.toString(),
-      {
-        fontFamily: 'Arial',
-        fontSize: '24px', // Más grande
-        color: '#ffffff',
-        stroke: '#000000',
-        strokeThickness: 4, // Más grueso
-        backgroundColor: '#ff5500' // Naranja
-      }
-    ).setOrigin(0.5, 0.5).setDepth(7).setPadding(10); // Más padding
-    
+
+    // Texto que muestra el valor actual
+    this.sliderText = this.add
+      .text(120 + sliderWidth / 2, sliderY - 30, this.sliderValue.toString(), {
+        fontFamily: "Arial",
+        fontSize: "18px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 3,
+        backgroundColor: "#007acc",
+      })
+      .setOrigin(0.5, 0.5)
+      .setDepth(7)
+      .setPadding(8);
+
     // Eventos de arrastre
-    this.slider.on('drag', (pointer, dragX, dragY) => {
+    this.slider.on("drag", (pointer, dragX, dragY) => {
       // Limitar el movimiento horizontal dentro de los límites de la barra
       const minX = 120;
       const maxX = 120 + sliderWidth;
       let newX = Phaser.Math.Clamp(dragX, minX, maxX);
-      
+
       // Actualizar posición del control deslizante
       this.slider.x = newX;
-      
+
       // Calcular y actualizar el valor basado en la posición
       const percentage = (newX - minX) / (maxX - minX);
-      this.sliderValue = Math.round((percentage * this.sliderMax) / this.sliderStep) * this.sliderStep;
-      
+      this.sliderValue =
+        Math.round((percentage * this.sliderMax) / this.sliderStep) *
+        this.sliderStep;
+
       // Actualizar el texto con el valor actual
       this.sliderText.setText(this.sliderValue.toString());
-      
+
       // Actualizar el input text para mantener sincronización
       this.inputText = this.sliderValue.toString();
       this.updateInputDisplay();
     });
-    
+
     // Evento de clic en la barra para mover directamente el control deslizante
     sliderTrack.setInteractive({ useHandCursor: true });
-    sliderTrack.on('pointerdown', (pointer) => {
+    sliderTrack.on("pointerdown", (pointer) => {
       const minX = 120;
       const maxX = 120 + sliderWidth;
       let newX = Phaser.Math.Clamp(pointer.x, minX, maxX);
-      
+
       // Actualizar posición del control deslizante
       this.slider.x = newX;
-      
+
       // Calcular y actualizar el valor
       const percentage = (newX - minX) / (maxX - minX);
-      this.sliderValue = Math.round((percentage * this.sliderMax) / this.sliderStep) * this.sliderStep;
-      
+      this.sliderValue =
+        Math.round((percentage * this.sliderMax) / this.sliderStep) *
+        this.sliderStep;
+
       // Actualizar el texto
       this.sliderText.setText(this.sliderValue.toString());
-      
+
       // Actualizar el input text
       this.inputText = this.sliderValue.toString();
       this.updateInputDisplay();
     });
   }
-  
+
   // Actualizar la barra deslizante para el ejercicio actual
   updateSliderForCurrentExercise() {
     // Reiniciar el valor de la barra deslizante
     this.sliderValue = 0;
-    
+
     // Actualizar la posición del control deslizante
     if (this.slider) {
       this.slider.x = 120; // Posición inicial
