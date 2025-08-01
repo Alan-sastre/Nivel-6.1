@@ -1309,59 +1309,45 @@ class DroneRepairScene extends Phaser.Scene {
     const existingButtons = document.querySelectorAll(".mobile-option-button");
     existingButtons.forEach((btn) => btn.remove());
 
-    // Crear opciones de respuesta para móviles
+    // Obtener la respuesta correcta
     const correctAnswer = this.currentExercise.correctValue;
-
-    // Generar opciones incorrectas más inteligentes
-    let options = [];
     const correctNum = parseInt(correctAnswer);
-
-    // Agregar opciones incorrectas que sean plausibles pero incorrectas
-    if (correctNum === 1000) {
-      options = [750, 1000, 1250, 1500]; // Aseguramos que 1000 esté incluido
-    } else if (correctNum === 2000) {
-      options = [1500, 2000, 2500, 3000]; // Aseguramos que 2000 esté incluido
+    
+    // Determinar el rango del slider basado en el valor correcto
+    let minValue = 0;
+    let maxValue = 3000;
+    
+    // Ajustar el rango para que el valor correcto esté en un punto razonable
+    if (correctNum <= 1000) {
+      maxValue = 2000;
+    } else if (correctNum <= 2000) {
+      maxValue = 3000;
     } else {
-      // Para otros valores, generar opciones cercanas
-      options = [
-        correctNum - 500,
-        correctNum,
-        correctNum + 500,
-        correctNum + 1000
-      ];
-    }
-
-    // Verificar que la respuesta correcta esté en las opciones
-    if (!options.includes(parseInt(correctAnswer))) {
-      // Si no está, reemplazar una opción aleatoria
-      const randomIndex = Math.floor(Math.random() * options.length);
-      options[randomIndex] = parseInt(correctAnswer);
+      minValue = 1000;
+      maxValue = 4000;
     }
     
-    // Convertir todos los números a strings
-    options = options.map(opt => opt.toString());
-    
-    // Mezclar las opciones
-    options = options.sort(() => Math.random() - 0.5);
-
-    // Crear contenedor de opciones debajo del dron, más a la izquierda
-    const optionsContainer = this.add
-      .container(this.gameWidth * 0.25, this.gameHeight * 0.75)
+    // Crear contenedor para el slider y elementos relacionados
+    const sliderContainer = this.add
+      .container(this.gameWidth / 2, this.gameHeight * 0.75)
       .setDepth(200);
-
-    // Fondo semi-transparente solo para el área de opciones
+    
+    // Guardar referencia al contenedor
+    this.mobileInputContainer = sliderContainer;
+    
+    // Fondo semi-transparente para el área del slider
     const bg = this.add
       .graphics()
-      .fillStyle(0x1e293b, 0.95) // Color más moderno
-      .fillRoundedRect(-150, -60, 300, 120, 15)
-      .lineStyle(2, 0x3b82f6, 1) // Borde azul más moderno
-      .strokeRoundedRect(-150, -60, 300, 120, 15)
+      .fillStyle(0x1e293b, 0.95) // Color moderno oscuro
+      .fillRoundedRect(-200, -80, 400, 160, 15)
+      .lineStyle(2, 0x3b82f6, 1) // Borde azul moderno
+      .strokeRoundedRect(-200, -80, 400, 160, 15)
       .setDepth(200);
-    optionsContainer.add(bg);
-
-    // Título más pequeño
+    sliderContainer.add(bg);
+    
+    // Título
     const title = this.add
-      .text(0, -45, "Selecciona tu respuesta:", {
+      .text(0, -55, "Ajusta el valor:", {
         fontFamily: "Arial",
         fontSize: "18px",
         color: "#ffffff",
@@ -1370,217 +1356,341 @@ class DroneRepairScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(201);
-    optionsContainer.add(title);
-
-    // Crear botones de opciones (1 fila de 4) con diseño mejorado
-    options.slice(0, 4).forEach((option, index) => {
-      const x = (index - 1.5) * 70; // 4 opciones en una fila horizontal
-      const y = 10; // Debajo del título
-
-      // Crear botón con diseño más moderno
-      // Primero un fondo con sombra para efecto 3D
-      const buttonShadow = this.add.graphics()
-        .fillStyle(0x1e293b, 0.7)
-        .fillRoundedRect(x - 32, y - 22 + 3, 64, 44, 10)
-        .setDepth(201);
-      optionsContainer.add(buttonShadow);
+    sliderContainer.add(title);
+    
+    // Crear la pista del slider
+    const trackWidth = 300;
+    const trackHeight = 8;
+    const track = this.add
+      .graphics()
+      .fillStyle(0x475569, 1) // Color gris oscuro para la pista
+      .fillRoundedRect(-trackWidth/2, -trackHeight/2, trackWidth, trackHeight, 4)
+      .setDepth(201);
+    track.x = 0;
+    track.y = 0;
+    sliderContainer.add(track);
+    
+    // Crear marcas de escala en la pista
+    const numMarks = 6; // Número de marcas en la escala
+    const markLabels = [];
+    
+    for (let i = 0; i <= numMarks; i++) {
+      const markX = -trackWidth/2 + (i * (trackWidth / numMarks));
+      const markValue = Math.round(minValue + (i * ((maxValue - minValue) / numMarks)));
       
-      // Luego el botón principal con gradiente
-      const button = this.add.graphics()
-        .fillStyle(0x3b82f6, 1)
-        .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
-        .lineStyle(2, 0x60a5fa, 1)
-        .strokeRoundedRect(x - 32, y - 22, 64, 44, 10)
+      // Marca vertical
+      const mark = this.add
+        .graphics()
+        .fillStyle(0x94a3b8, 1) // Color gris claro para las marcas
+        .fillRect(markX - 1, -10, 2, 20)
         .setDepth(201);
+      mark.x = 0;
+      mark.y = 0;
+      sliderContainer.add(mark);
       
-      // Crear un área interactiva sobre el botón
-      const hitArea = this.add.rectangle(x, y, 64, 44, 0xffffff, 0);
-      hitArea.setInteractive();
-      hitArea.setDepth(201);
-
-      // Crear el texto del botón con estilo mejorado
-      const buttonText = this.add
-        .text(x, y, option.toString(), {
+      // Etiqueta de valor
+      const label = this.add
+        .text(markX, 20, markValue.toString(), {
           fontFamily: "Arial",
-          fontSize: "18px",
-          color: "#ffffff",
-          stroke: "#000000",
-          strokeThickness: 2,
-          fontWeight: "bold"
+          fontSize: "14px",
+          color: "#cbd5e1", // Color gris claro para las etiquetas
         })
         .setOrigin(0.5)
-        .setDepth(202);
-
-      // Agregar al contenedor
-      optionsContainer.add(button);
-      optionsContainer.add(buttonShadow);
-      optionsContainer.add(buttonText);
-      optionsContainer.add(hitArea);
-
-      // Función para manejar la respuesta
-      const handleAnswer = () => {
-        console.log("Botón tocado:", option.toString());
-
-        if (option.toString() === correctAnswer) {
-          console.log("¡Correcto!");
-          // Actualizar el botón a verde para respuesta correcta
-          button.clear()
-            .fillStyle(0x22c55e, 1)
-            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
-            .lineStyle(2, 0x4ade80, 1)
-            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
-            
-          buttonText.setText("✅");
-          
-          // Añadir efecto de partículas para celebración
-          const particles = this.add.particles(x, y, 'particle', {
-            speed: { min: 50, max: 100 },
-            scale: { start: 0.2, end: 0 },
-            quantity: 1,
-            lifespan: 800,
-            emitting: false,
-            tint: [ 0x4ade80, 0x22c55e, 0xffffff ]
-          });
-          optionsContainer.add(particles);
-          particles.explode(20);
-          console.log('Partículas de celebración creadas');
-
-          this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
-
-          this.time.delayedCall(1500, () => {
-            if (optionsContainer) {
-              optionsContainer.destroy();
-            }
-            this.inputText = correctAnswer;
-            this.checkAnswer();
-          });
-        } else {
-          console.log("Incorrecto");
-          // Actualizar el botón a rojo para respuesta incorrecta
-          button.clear()
-            .fillStyle(0xef4444, 1)
-            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
-            .lineStyle(2, 0xf87171, 1)
-            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
-            
-          buttonText.setText("❌");
-
-          this.showMessage(
-            "Incorrecto. Inténtalo de nuevo.",
-            "#f87171",
-            false,
-            1000
-          );
-
-          // Efecto de vibración para respuesta incorrecta
-          this.tweens.add({
-            targets: [button, buttonText],
-            x: { from: x - 5, to: x + 5 },
-            duration: 50,
-            repeat: 3,
-            yoyo: true,
-            ease: 'Sine.easeInOut',
-            onComplete: () => {
-              button.x = x;
-              buttonText.x = x;
-            }
-          });
-
-          this.time.delayedCall(1000, () => {
-            // Restaurar el botón a su estado original
-            button.clear()
-              .fillStyle(0x3b82f6, 1)
-              .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
-              .lineStyle(2, 0x60a5fa, 1)
-              .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
-              
-            buttonText.setText(option.toString());
-          });
-        }
-      };
-
-      // Eventos optimizados para móviles y desktop
-      hitArea.on("pointerdown", (pointer, localX, localY, event) => {
-        // Prevenir comportamientos por defecto
-        if (event && event.preventDefault) {
-          event.preventDefault();
-        }
-        if (event && event.stopPropagation) {
-          event.stopPropagation();
-        }
-        
-        // Efecto visual inmediato - botón presionado
-        button.clear()
-          .fillStyle(0x1d4ed8, 1)
-          .fillRoundedRect(x - 32, y - 22 + 2, 64, 44, 10) // Mover ligeramente hacia abajo
-          .lineStyle(2, 0x60a5fa, 1)
-          .strokeRoundedRect(x - 32, y - 22 + 2, 64, 44, 10);
-        
-        buttonText.setScale(0.95);
-        buttonText.y = y + 2; // Mover texto hacia abajo
-      });
-      
-      hitArea.on("pointerup", (pointer, localX, localY, event) => {
-        // Prevenir comportamientos por defecto
-        if (event && event.preventDefault) {
-          event.preventDefault();
-        }
-        if (event && event.stopPropagation) {
-          event.stopPropagation();
-        }
-        
-        // Restaurar apariencia
-        button.clear()
-          .fillStyle(0x3b82f6, 1)
-          .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
-          .lineStyle(2, 0x60a5fa, 1)
-          .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
-        
-        buttonText.setScale(1);
-        buttonText.y = y; // Restaurar posición del texto
-        
-        // Ejecutar acción
-        handleAnswer();
-      });
-      
-      hitArea.on("pointerover", () => {
-        if (!this.isMobile) {
-          // Efecto de brillo al pasar el mouse
-          button.clear()
-            .fillStyle(0x2563eb, 1)
-            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
-            .lineStyle(3, 0x93c5fd, 1) // Borde más brillante
-            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
-          
-          // Añadir un ligero efecto de escala
-          this.tweens.add({
-            targets: buttonText,
-            scale: 1.05,
-            duration: 100,
-            ease: 'Sine.easeOut'
-          });
-        }
-      });
-      
-      hitArea.on("pointerout", () => {
-        if (!this.isMobile) {
-          // Restaurar apariencia normal
-          button.clear()
-            .fillStyle(0x3b82f6, 1)
-            .fillRoundedRect(x - 32, y - 22, 64, 44, 10)
-            .lineStyle(2, 0x60a5fa, 1)
-            .strokeRoundedRect(x - 32, y - 22, 64, 44, 10);
-          
-          // Restaurar escala normal
-          this.tweens.add({
-            targets: buttonText,
-            scale: 1,
-            duration: 100,
-            ease: 'Sine.easeOut'
-          });
-        }
-      });
+        .setDepth(201);
+      sliderContainer.add(label);
+      markLabels.push(label);
+    }
+    
+    // Crear el control deslizante (handle)
+    const handle = this.add
+      .graphics()
+      .fillStyle(0x3b82f6, 1) // Color azul para el handle
+      .fillCircle(0, 0, 15)
+      .lineStyle(2, 0x60a5fa, 1) // Borde azul claro
+      .strokeCircle(0, 0, 15)
+      .setDepth(202);
+    handle.x = -trackWidth/2; // Posición inicial en el extremo izquierdo
+    handle.y = 0;
+    sliderContainer.add(handle);
+    
+    // Área interactiva para el handle
+    const handleHitArea = this.add
+      .circle(handle.x, handle.y, 25)
+      .setInteractive()
+      .setDepth(202);
+    handleHitArea.alpha = 0.01; // Casi invisible
+    sliderContainer.add(handleHitArea);
+    
+    // Mostrar valor actual
+    const valueText = this.add
+      .text(0, -25, minValue.toString(), {
+        fontFamily: "Arial",
+        fontSize: "24px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 3,
+        fontWeight: "bold"
+      })
+      .setOrigin(0.5)
+      .setDepth(202);
+    sliderContainer.add(valueText);
+    
+    // Variable para almacenar el valor actual del slider
+    let currentValue = minValue;
+    
+    // Hacer que el handle sea arrastrable
+    this.input.setDraggable(handleHitArea);
+    
+    // Eventos para el handle
+    handleHitArea.on('pointerover', function() {
+      handle.clear()
+        .fillStyle(0x2563eb, 1) // Azul más oscuro al pasar el mouse
+        .fillCircle(0, 0, 15)
+        .lineStyle(2, 0x93c5fd, 1) // Borde azul más claro
+        .strokeCircle(0, 0, 15);
     });
+    
+    handleHitArea.on('pointerout', function() {
+      handle.clear()
+        .fillStyle(0x3b82f6, 1) // Volver al azul normal
+        .fillCircle(0, 0, 15)
+        .lineStyle(2, 0x60a5fa, 1) // Borde azul normal
+        .strokeCircle(0, 0, 15);
+    });
+    
+    // Función para actualizar el valor basado en la posición del handle
+    const updateValue = (x) => {
+      // Limitar x dentro de los límites de la pista
+      const limitedX = Phaser.Math.Clamp(x, -trackWidth/2, trackWidth/2);
+      
+      // Calcular el valor basado en la posición
+      const percentage = (limitedX + trackWidth/2) / trackWidth;
+      currentValue = Math.round(minValue + percentage * (maxValue - minValue));
+      
+      // Actualizar el texto del valor
+      valueText.setText(currentValue.toString());
+      
+      // Actualizar posición del handle y su área interactiva
+      handle.x = limitedX;
+      handleHitArea.x = limitedX;
+    };
+    
+    // Evento de arrastre
+    this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+      if (gameObject === handleHitArea) {
+        // Convertir coordenadas globales a locales del contenedor
+        const localX = dragX - sliderContainer.x;
+        updateValue(localX);
+      }
+    });
+    
+    // También permitir hacer clic directamente en la pista
+    bg.setInteractive(new Phaser.Geom.Rectangle(-trackWidth/2, -30, trackWidth, 60), Phaser.Geom.Rectangle.Contains);
+    bg.on('pointerdown', (pointer) => {
+      // Convertir coordenadas globales a locales del contenedor
+      const localX = pointer.x - sliderContainer.x;
+      updateValue(localX);
+    });
+    
+    // Botón de verificación
+    const checkButton = this.add
+      .graphics()
+      .fillStyle(0x22c55e, 1) // Verde para el botón de verificar
+      .fillRoundedRect(-75, 50, 150, 40, 10)
+      .lineStyle(2, 0x4ade80, 1) // Borde verde claro
+      .strokeRoundedRect(-75, 50, 150, 40, 10)
+      .setDepth(201);
+    sliderContainer.add(checkButton);
+    
+    // Texto del botón
+    const checkText = this.add
+      .text(0, 50, "Verificar", {
+        fontFamily: "Arial",
+        fontSize: "18px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 2,
+        fontWeight: "bold"
+      })
+      .setOrigin(0.5)
+      .setDepth(202);
+    sliderContainer.add(checkText);
+    
+    // Área interactiva para el botón
+    const checkHitArea = this.add
+      .rectangle(0, 50, 150, 40, 0xffffff, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(202);
+    sliderContainer.add(checkHitArea);
+
+    // Eventos para el botón de verificación
+    checkHitArea.on('pointerover', () => {
+      checkButton.clear()
+        .fillStyle(0x16a34a, 1) // Verde más oscuro al pasar el mouse
+        .fillRoundedRect(-75, 50, 150, 40, 10)
+        .lineStyle(2, 0x4ade80, 1)
+        .strokeRoundedRect(-75, 50, 150, 40, 10);
+      
+      checkText.setScale(1.05);
+    });
+    
+    checkHitArea.on('pointerout', () => {
+      checkButton.clear()
+        .fillStyle(0x22c55e, 1) // Volver al verde normal
+        .fillRoundedRect(-75, 50, 150, 40, 10)
+        .lineStyle(2, 0x4ade80, 1)
+        .strokeRoundedRect(-75, 50, 150, 40, 10);
+      
+      checkText.setScale(1);
+    });
+    
+    checkHitArea.on('pointerdown', (pointer, localX, localY, event) => {
+      // Prevenir comportamientos por defecto
+      if (event && event.preventDefault) {
+        event.preventDefault();
+      }
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      
+      // Efecto visual al presionar
+      checkButton.clear()
+        .fillStyle(0x15803d, 1) // Verde aún más oscuro al presionar
+        .fillRoundedRect(-75, 50 + 2, 150, 40, 10) // Mover ligeramente hacia abajo
+        .lineStyle(2, 0x4ade80, 1)
+        .strokeRoundedRect(-75, 50 + 2, 150, 40, 10);
+      
+      checkText.setScale(0.95);
+      checkText.y = 52; // Mover texto hacia abajo
+    });
+    
+    checkHitArea.on('pointerup', (pointer, localX, localY, event) => {
+      // Prevenir comportamientos por defecto
+      if (event && event.preventDefault) {
+        event.preventDefault();
+      }
+      if (event && event.stopPropagation) {
+        event.stopPropagation();
+      }
+      
+      // Restaurar estilo
+      checkButton.clear()
+        .fillStyle(0x22c55e, 1)
+        .fillRoundedRect(-75, 50, 150, 40, 10)
+        .lineStyle(2, 0x4ade80, 1)
+        .strokeRoundedRect(-75, 50, 150, 40, 10);
+      
+      checkText.setScale(1);
+      checkText.y = 50; // Restaurar posición del texto
+      
+      // Verificar la respuesta
+      console.log("Verificando respuesta:", currentValue, "Respuesta correcta:", correctAnswer);
+      
+      if (currentValue.toString() === correctAnswer) {
+        console.log("¡Correcto!");
+        
+        // Cambiar el botón a un check verde
+        checkButton.clear()
+          .fillStyle(0x22c55e, 1)
+          .fillRoundedRect(-75, 50, 150, 40, 10)
+          .lineStyle(2, 0x4ade80, 1)
+          .strokeRoundedRect(-75, 50, 150, 40, 10);
+        
+        checkText.setText("✅ ¡Correcto!");
+        
+        // Añadir efecto de partículas para celebración
+        const particles = this.add.particles(0, 0, 'particle', {
+          speed: { min: 50, max: 100 },
+          scale: { start: 0.2, end: 0 },
+          quantity: 1,
+          lifespan: 800,
+          emitting: false,
+          tint: [ 0x4ade80, 0x22c55e, 0xffffff ]
+        });
+        sliderContainer.add(particles);
+        particles.explode(20);
+        console.log('Partículas de celebración creadas');
+        
+        // Mostrar mensaje de éxito
+        this.showMessage("¡Correcto! 🎉", "#4ade80", false, 1000);
+        
+        // Después de un breve retraso, cerrar el contenedor y proceder
+        this.time.delayedCall(1500, () => {
+          if (sliderContainer) {
+            sliderContainer.destroy();
+          }
+          this.inputText = correctAnswer;
+          this.checkAnswer();
+        });
+      } else {
+        console.log("Incorrecto");
+        
+        // Calcular qué tan cerca está el valor del usuario
+        const userValue = currentValue;
+        const targetValue = parseInt(correctAnswer);
+        const difference = Math.abs(userValue - targetValue);
+        
+        let message = "";
+        
+        // Dar pistas basadas en qué tan cerca está
+        if (difference <= 100) {
+          message = "¡Muy cerca! Ajusta un poco más.";
+        } else if (difference <= 300) {
+          message = userValue < targetValue ? "Un poco más alto." : "Un poco más bajo.";
+        } else {
+          message = userValue < targetValue ? "Mucho más alto." : "Mucho más bajo.";
+        }
+        
+        // Cambiar el botón a rojo temporalmente
+        checkButton.clear()
+          .fillStyle(0xef4444, 1) // Rojo para respuesta incorrecta
+          .fillRoundedRect(-75, 50, 150, 40, 10)
+          .lineStyle(2, 0xf87171, 1)
+          .strokeRoundedRect(-75, 50, 150, 40, 10);
+        
+        checkText.setText("Intenta de nuevo");
+        
+        // Mostrar mensaje con pista
+        this.showMessage(message, "#f87171", false, 1500);
+        
+        // Efecto de vibración para respuesta incorrecta
+        this.tweens.add({
+          targets: [handle, handleHitArea],
+          x: { from: handle.x - 5, to: handle.x + 5 },
+          duration: 50,
+          repeat: 3,
+          yoyo: true,
+          ease: 'Sine.easeInOut',
+          onComplete: () => {
+            // Asegurarse de que el handle vuelva a su posición correcta
+            handleHitArea.x = handle.x;
+          }
+        });
+        
+        // Restaurar el botón después de un tiempo
+        this.time.delayedCall(1500, () => {
+          checkButton.clear()
+            .fillStyle(0x22c55e, 1)
+            .fillRoundedRect(-75, 50, 150, 40, 10)
+            .lineStyle(2, 0x4ade80, 1)
+            .strokeRoundedRect(-75, 50, 150, 40, 10);
+          
+          checkText.setText("Verificar");
+        });
+      }
+    });
+    
+    // Efecto de aparición
+    sliderContainer.setAlpha(0);
+    this.tweens.add({
+      targets: sliderContainer,
+      alpha: 1,
+      duration: 300,
+      ease: "Power2",
+    });
+    
+    // Guardar referencia al contenedor
+    this.mobileInputContainer = sliderContainer;
 
     // Agregar mensaje de ayuda (solo si se presiona el botón de pista)
     // const helpMessage = this.add
