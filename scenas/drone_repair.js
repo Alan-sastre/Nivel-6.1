@@ -95,7 +95,7 @@ class DroneRepairScene extends Phaser.Scene {
 
     // Dron más grande - empieza rojo (ajustado para móviles)
     const droneX = this.isMobile ? 80 : 120;
-    const droneScale = this.isMobile ? 0.8 : 0.9; // Dron más grande
+    const droneScale = this.isMobile ? 1.2 : 0.9; // Dron mucho más grande en móviles
 
     this.drone = this.add
       .image(droneX, this.gameHeight / 2, "drone_red")
@@ -279,22 +279,8 @@ class DroneRepairScene extends Phaser.Scene {
     this.hintButton.on("pointerdown", () => {
       console.log("Botón Pista clickeado!");
 
-      // Prueba directa - crear mensaje inmediatamente
-      const testMessage = this.add
-        .text(this.gameWidth / 2, this.gameHeight - 100, {
-          fontFamily: "Arial",
-          fontSize: "24px",
-          color: "#ff0000",
-          stroke: "#ffffff",
-          strokeThickness: 3,
-        })
-        .setOrigin(0.5)
-        .setDepth(200);
-
-      // Destruir mensaje de prueba después de 2 segundos
-      this.time.delayedCall(2000, () => {
-        testMessage.destroy();
-      });
+      // Ya no necesitamos este mensaje de prueba, lo eliminamos
+      /* Código eliminado para evitar el mensaje [object Object] */
 
       // También llamar a la función original
       this.showHint();
