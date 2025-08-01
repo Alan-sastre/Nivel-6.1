@@ -93,9 +93,9 @@ class DroneRepairScene extends Phaser.Scene {
       .fillStyle(0x000000, 0.15)
       .fillRect(0, 0, this.gameWidth, this.gameHeight);
 
-    // Dron más grande - empieza rojo (ajustado para móviles)
+    // Dron mucho más grande - empieza rojo (ajustado para móviles)
     const droneX = this.isMobile ? 80 : 120;
-    const droneScale = this.isMobile ? 0.5 : 0.6; // Dron más grande
+    const droneScale = this.isMobile ? 0.8 : 1.0; // Dron mucho más grande
 
     this.drone = this.add
       .image(droneX, this.gameHeight / 2, "drone_red")
@@ -1439,68 +1439,87 @@ class DroneRepairScene extends Phaser.Scene {
     this.input.keyboard.off("keydown");
   }
   
-  // Crear la barra deslizante debajo del dron
+  // Crear la barra deslizante debajo del dron con nuevo diseño
   createSlider() {
-    const sliderY = this.gameHeight / 2 + 100;
-    const sliderWidth = this.isMobile ? 200 : 300;
+    const sliderY = this.gameHeight / 2 + 120; // Posición más abajo
+    const sliderWidth = this.isMobile ? 280 : 400; // Barra más ancha
     
-    // Fondo de la barra deslizante
+    // Fondo de la barra deslizante con nuevo diseño
     const sliderTrack = this.add.rectangle(
       120, // Alineado con el dron
       sliderY,
       sliderWidth,
-      10,
-      0x333333,
-      0.8
+      16, // Más alta
+      0x222222, // Color más oscuro
+      0.9 // Más opaco
     ).setOrigin(0, 0.5).setDepth(5);
     
-    // Borde de la barra
+    // Borde de la barra con nuevo diseño
     this.add.graphics()
-      .lineStyle(2, 0x007acc, 1)
-      .strokeRect(120, sliderY - 5, sliderWidth, 10)
+      .lineStyle(3, 0xff5500, 1) // Naranja más llamativo y línea más gruesa
+      .strokeRoundedRect(120, sliderY - 8, sliderWidth, 16, 8) // Bordes redondeados
       .setDepth(6);
     
-    // Marcas de la barra (cada 500 unidades)
+    // Fondo degradado para la barra
+    const gradientGraphics = this.add.graphics().setDepth(5);
+    const gradient = gradientGraphics.createLinearGradient(
+      120, 0, 120 + sliderWidth, 0
+    );
+    gradient.addColorStop(0, '#330000');
+    gradient.addColorStop(0.5, '#660000');
+    gradient.addColorStop(1, '#990000');
+    gradientGraphics.fillStyle(gradient);
+    gradientGraphics.fillRoundedRect(120, sliderY - 8, sliderWidth, 16, 8);
+    
+    // Marcas de la barra (cada 500 unidades) con nuevo diseño
     for (let i = 0; i <= this.sliderMax; i += 500) {
       const x = 120 + (i / this.sliderMax) * sliderWidth;
       
-      // Línea de marca
-      this.add.line(0, 0, x, sliderY - 10, x, sliderY + 10, 0xffffff, 0.5)
-        .setOrigin(0, 0).setDepth(6);
+      // Línea de marca más visible
+      this.add.line(0, 0, x, sliderY - 15, x, sliderY + 15, 0xffaa00, 0.8) // Color naranja y más visible
+        .setOrigin(0, 0).setDepth(6).setLineWidth(2); // Línea más gruesa
       
-      // Texto de la marca
-      this.add.text(x, sliderY + 15, i.toString(), {
+      // Texto de la marca más grande y visible
+      this.add.text(x, sliderY + 20, i.toString(), {
         fontFamily: 'Arial',
-        fontSize: '12px',
-        color: '#ffffff'
+        fontSize: '14px', // Texto más grande
+        color: '#ffaa00', // Color naranja
+        stroke: '#000000',
+        strokeThickness: 2
       }).setOrigin(0.5, 0).setDepth(6);
     }
     
-    // Control deslizante (thumb)
-    this.slider = this.add.rectangle(
+    // Control deslizante (thumb) con nuevo diseño
+    this.slider = this.add.circle( // Círculo en lugar de rectángulo
       120,
       sliderY,
-      20,
-      20,
-      0x007acc,
-      1
+      18, // Más grande
+      0xffaa00 // Naranja
     ).setOrigin(0.5, 0.5).setDepth(7)
       .setInteractive({ draggable: true, useHandCursor: true });
+      
+    // Borde del control deslizante
+    this.add.circle(
+      120,
+      sliderY,
+      18,
+      0xffffff
+    ).setOrigin(0.5, 0.5).setDepth(6).setAlpha(0.3);
     
-    // Texto que muestra el valor actual
+    // Texto que muestra el valor actual con nuevo diseño
     this.sliderText = this.add.text(
       120 + sliderWidth / 2,
-      sliderY - 30,
+      sliderY - 40, // Más separado
       this.sliderValue.toString(),
       {
         fontFamily: 'Arial',
-        fontSize: '18px',
+        fontSize: '24px', // Más grande
         color: '#ffffff',
         stroke: '#000000',
-        strokeThickness: 3,
-        backgroundColor: '#007acc'
+        strokeThickness: 4, // Más grueso
+        backgroundColor: '#ff5500' // Naranja
       }
-    ).setOrigin(0.5, 0.5).setDepth(7).setPadding(8);
+    ).setOrigin(0.5, 0.5).setDepth(7).setPadding(10); // Más padding
     
     // Eventos de arrastre
     this.slider.on('drag', (pointer, dragX, dragY) => {
