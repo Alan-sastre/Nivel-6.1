@@ -130,34 +130,20 @@ class DroneRepairScene extends Phaser.Scene {
       this.setupKeyboard();
     }
 
-    // En móviles, mostrar directamente las opciones de respuesta
+    // En móviles, verificar orientación y mostrar opciones o mensaje
     if (this.isMobile) {
-      // No mostrar mensaje de ayuda automático
-      // this.time.delayedCall(500, () => {
-      //   const helpText = this.add
-      //     .text(
-      //       this.gameWidth / 2,
-      //       this.gameHeight - 40,
-      //       "Toca el botón ? para ver las opciones de respuesta",
-      //       {
-      //         fontFamily: "Arial",
-      //         fontSize: "24px",
-      //         color: "#ffffff",
-      //         stroke: "#000000",
-      //         strokeThickness: 3,
-      //         backgroundColor: "#007acc",
-      //         padding: { x: 15, y: 8 },
-      //       }
-      //     )
-      //     .setOrigin(0.5)
-      //     .setDepth(100);
-      // });
-
-      // Abrir automáticamente el modal de entrada para móviles después de un breve retraso
-      this.time.delayedCall(1000, () => {
-        // Mostrar directamente las opciones de respuesta
-        this.createMobileInput();
-      });
+      // Verificar si estamos en modo horizontal o vertical
+      if (window.innerWidth > window.innerHeight) {
+        // En horizontal, mostrar opciones después de un breve retraso
+        this.time.delayedCall(1000, () => {
+          this.createMobileInput();
+        });
+      } else {
+        // En vertical, mostrar mensaje para girar el dispositivo
+        this.time.delayedCall(500, () => {
+          this.showRotateMessage();
+        });
+      }
     }
   }
 
@@ -191,6 +177,33 @@ class DroneRepairScene extends Phaser.Scene {
     
     // Recalcular posiciones de elementos
     this.repositionElements();
+    
+    // Si estamos en modo horizontal en móvil, mostrar mensaje para girar
+    if (this.isMobile && window.innerWidth > window.innerHeight) {
+      // Mostrar mensaje para girar el dispositivo
+      this.showRotateMessage();
+    } else {
+      // Ocultar mensaje si existe
+      this.hideRotateMessage();
+      
+      // Recrear las opciones de entrada móvil si estamos en el ejercicio
+      if (this.isMobile && this.currentExercise) {
+        // Eliminar opciones anteriores
+        if (this.mobileInputContainer) {
+          this.mobileInputContainer.destroy();
+          this.mobileInputContainer = null;
+        }
+        
+        // Limpiar botones HTML anteriores
+        const existingButtons = document.querySelectorAll(".mobile-option-button");
+        existingButtons.forEach((btn) => btn.remove());
+        
+        // Recrear opciones después de un breve retraso
+        this.time.delayedCall(500, () => {
+          this.createMobileInput();
+        });
+      }
+    }
   }
 
   repositionElements() {
@@ -1251,25 +1264,34 @@ class DroneRepairScene extends Phaser.Scene {
     const correctAnswer = this.currentExercise.correctValue;
 
     // Generar opciones incorrectas más inteligentes
-    let options = [correctAnswer];
+    let options = [];
     const correctNum = parseInt(correctAnswer);
 
     // Agregar opciones incorrectas que sean plausibles pero incorrectas
     if (correctNum === 1000) {
-      options.push(500, 1500, 2000, 750, 1250);
+      options = [750, 1000, 1250, 1500]; // Aseguramos que 1000 esté incluido
     } else if (correctNum === 2000) {
-      options.push(1000, 3000, 1500, 2500, 1800);
+      options = [1500, 2000, 2500, 3000]; // Aseguramos que 2000 esté incluido
     } else {
       // Para otros valores, generar opciones cercanas
-      options.push(
-        correctNum + 500,
+      options = [
         correctNum - 500,
-        correctNum + 1000,
-        correctNum - 1000,
-        correctNum + 200
-      );
+        correctNum,
+        correctNum + 500,
+        correctNum + 1000
+      ];
     }
 
+    // Verificar que la respuesta correcta esté en las opciones
+    if (!options.includes(parseInt(correctAnswer))) {
+      // Si no está, reemplazar una opción aleatoria
+      const randomIndex = Math.floor(Math.random() * options.length);
+      options[randomIndex] = parseInt(correctAnswer);
+    }
+    
+    // Convertir todos los números a strings
+    options = options.map(opt => opt.toString());
+    
     // Mezclar las opciones
     options = options.sort(() => Math.random() - 0.5);
 
@@ -1542,6 +1564,116 @@ class DroneRepairScene extends Phaser.Scene {
     return;
   }
 
+  showRotateMessage() {
+    // Si ya existe un mensaje de rotación, no crear otro
+    if (this.rotateMessage) return;
+    
+    // Crear un contenedor para el mensaje de rotación
+    this.rotateMessage = this.add.container(this.gameWidth / 2, this.gameHeight / 2).setDepth(1000);
+    
+    // Fondo semi-transparente para el mensaje
+    const bg = this.add
+      .graphics()
+      .fillStyle(0x000000, 0.8)
+      .fillRoundedRect(-200, -100, 400, 200, 20)
+      .lineStyle(3, 0xffffff, 0.5)
+      .strokeRoundedRect(-200, -100, 400, 200, 20);
+    
+    // Texto del mensaje
+    const text = this.add
+      .text(0, -20, "Por favor, gira tu dispositivo\na modo horizontal para jugar.", {
+        fontFamily: "Arial",
+        fontSize: "24px",
+        color: "#ffffff",
+        align: "center",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+    
+    // Botones de opciones de resolución
+    const resolutions = [750, 1250, 1500, 2000];
+    const buttonWidth = 80;
+    const buttonSpacing = 10;
+    const totalWidth = resolutions.length * buttonWidth + (resolutions.length - 1) * buttonSpacing;
+    let startX = -totalWidth / 2 + buttonWidth / 2;
+    
+    resolutions.forEach(resolution => {
+      // Crear botón
+      const button = this.add
+        .rectangle(startX, 50, buttonWidth, 40, 0x3b82f6)
+        .setInteractive({ useHandCursor: true });
+      
+      // Texto del botón
+      const buttonText = this.add
+        .text(startX, 50, resolution.toString(), {
+          fontFamily: "Arial",
+          fontSize: "20px",
+          color: "#ffffff",
+        })
+        .setOrigin(0.5);
+      
+      // Eventos del botón
+      button.on("pointerdown", () => {
+        // Cambiar estilo al presionar
+        button.setFillStyle(0x1d4ed8);
+        buttonText.setScale(0.95);
+      });
+      
+      button.on("pointerup", () => {
+        // Restaurar estilo
+        button.setFillStyle(0x3b82f6);
+        buttonText.setScale(1);
+        
+        // Ocultar mensaje
+        this.hideRotateMessage();
+        
+        // Recrear opciones de entrada
+        this.time.delayedCall(500, () => {
+          this.createMobileInput();
+        });
+      });
+      
+      // Agregar al contenedor
+      this.rotateMessage.add(button);
+      this.rotateMessage.add(buttonText);
+      
+      // Actualizar posición para el siguiente botón
+      startX += buttonWidth + buttonSpacing;
+    });
+    
+    // Agregar elementos al contenedor
+    this.rotateMessage.add(bg);
+    this.rotateMessage.add(text);
+    
+    // Efecto de aparición
+    this.rotateMessage.setAlpha(0);
+    this.tweens.add({
+      targets: this.rotateMessage,
+      alpha: 1,
+      duration: 300,
+      ease: "Power2"
+    });
+  }
+  
+  hideRotateMessage() {
+    // Si no hay mensaje de rotación, no hacer nada
+    if (!this.rotateMessage) return;
+    
+    // Efecto de desaparición
+    this.tweens.add({
+      targets: this.rotateMessage,
+      alpha: 0,
+      duration: 300,
+      ease: "Power2",
+      onComplete: () => {
+        // Destruir el mensaje
+        this.rotateMessage.destroy();
+        this.rotateMessage = null;
+      }
+    });
+  }
+
   shutdown() {
     // Limpiar recursos
     if (this.cursor) {
@@ -1552,6 +1684,12 @@ class DroneRepairScene extends Phaser.Scene {
     if (this.mobileInputContainer) {
       this.mobileInputContainer.destroy();
       this.mobileInputContainer = null;
+    }
+    
+    // Limpiar mensaje de rotación si existe
+    if (this.rotateMessage) {
+      this.rotateMessage.destroy();
+      this.rotateMessage = null;
     }
 
     // Limpiar botón de opciones
