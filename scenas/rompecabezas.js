@@ -100,7 +100,7 @@ class Rompecabezas extends Phaser.Scene {
             strokeThickness: 3
         }).setOrigin(0.5).setName('title');
 
-        let subtitle = this.add.text(width/2, 60, 'Encuentra y corrige los errores en el codigo', {
+        let subtitle = this.add.text(width/2, 60, 'Pulsa en el codigo erroneo para repararla', {
             font: 'bold 20px Arial',
             fill: '#ffd700',
             stroke: '#2a2a3a',
